@@ -1,3 +1,4 @@
+// routes/user.js
 const { Router } = require("express");
 const User = require("../models/user");
 const Notification = require("../models/notification");
@@ -364,6 +365,43 @@ router.post("/follow/:id", async (req, res) => {
   } catch (error) {
     console.error("Error sending follow request:", error);
     return res.redirect(`/?error_msg=Failed to send follow request`);
+  }
+});
+
+// POST /user/cancel-follow/:id
+router.post("/cancel-follow/:id", async (req, res) => {
+  if (!req.user) {
+    return res.redirect("/user/signin?error_msg=Please sign in to cancel follow requests");
+  }
+
+  const userIdToCancel = req.params.id;
+  const currentUserId = req.user._id;
+
+  if (userIdToCancel === currentUserId.toString()) {
+    return res.redirect(`/?error_msg=Invalid operation`);
+  }
+
+  try {
+    const userToCancel = await User.findById(userIdToCancel);
+    if (!userToCancel) {
+      return res.redirect(`/?error_msg=User not found`);
+    }
+
+    const notification = await Notification.findOne({
+      sender: currentUserId,
+      recipient: userIdToCancel,
+      type: "FOLLOW_REQUEST",
+      status: "PENDING",
+    });
+
+    if (notification) {
+      await notification.deleteOne();
+    }
+
+    return res.redirect(`/profile/${userIdToCancel}?success_msg=Follow request cancelled`);
+  } catch (error) {
+    console.error("Error cancelling follow request:", error);
+    return res.redirect(`/?error_msg=Failed to cancel follow request`);
   }
 });
 
