@@ -1,3 +1,4 @@
+// routes/blog.js
 const { Router } = require("express");
 const Blog = require("../models/blog");
 const Comment = require("../models/comments");
@@ -92,10 +93,6 @@ router.post("/:id/like", async (req, res) => {
       return res.redirect(`/blog/${req.params.id}?error_msg=Blog not found`);
     }
 
-    if (blog.createdBy._id.toString() === req.user._id.toString()) {
-      return res.redirect(`/blog/${req.params.id}?error_msg=You cannot like your own blog`);
-    }
-
     const user = await User.findById(req.user._id);
     const isLiked = blog.likes.includes(req.user._id);
 
@@ -112,23 +109,25 @@ router.post("/:id/like", async (req, res) => {
       blog.likes.push(req.user._id);
       user.likedBlogs.push(req.params.id);
 
-      // Check for existing like notification
-      const existingLikeNotification = await Notification.findOne({
-        sender: req.user._id,
-        recipient: blog.createdBy._id,
-        type: "LIKE",
-        blogId: req.params.id,
-      });
-
-      if (!existingLikeNotification) {
-        await Notification.create({
-          recipient: blog.createdBy._id,
+      if (blog.createdBy._id.toString() !== req.user._id.toString()) {
+        // Check for existing like notification
+        const existingLikeNotification = await Notification.findOne({
           sender: req.user._id,
+          recipient: blog.createdBy._id,
           type: "LIKE",
           blogId: req.params.id,
-          message: `${req.user.fullname} liked your post: ${blog.title}`,
-          isRead: false,
         });
+
+        if (!existingLikeNotification) {
+          await Notification.create({
+            recipient: blog.createdBy._id,
+            sender: req.user._id,
+            type: "LIKE",
+            blogId: req.params.id,
+            message: `${req.user.fullname} liked your post: ${blog.title}`,
+            isRead: false,
+          });
+        }
       }
     }
 
