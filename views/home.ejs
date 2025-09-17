@@ -1,3 +1,4 @@
+<!-- views/home.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -156,7 +157,7 @@
       margin-top: 0.5rem;
       align-items: center;
     }
-    .action-btn, .follow-btn, .comments-btn {
+    .action-btn, .follow-btn, .comments-btn, .likes-btn {
       border: none;
       outline: none;
       border-radius: 6px;
@@ -174,7 +175,8 @@
       background: var(--danger-color);
     }
     .action-btn:hover,
-    .comments-btn:hover {
+    .comments-btn:hover,
+    .likes-btn:hover {
       background: #16a085;
       transform: scale(1.05);
     }
@@ -184,6 +186,13 @@
     .follow-btn.following {
       background: var(--danger-color);
     }
+    .follow-btn.requested {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+    .follow-btn.cancel {
+      background: var(--danger-color);
+    }
     .follow-btn:hover {
       background: #219653;
       transform: scale(1.05);
@@ -191,7 +200,10 @@
     .follow-btn.following:hover {
       background: #c0392b;
     }
-    /* Comments Modal Styles */
+    .follow-btn.cancel:hover {
+      background: #c0392b;
+    }
+    /* Modals Styles */
     .modal {
       display: none;
       position: fixed;
@@ -235,7 +247,7 @@
       font-size: 1.3rem;
       letter-spacing: 1px;
     }
-    .comment-block {
+    .comment-block, .like-block {
       display: flex;
       align-items: flex-start;
       gap: 1.1rem;
@@ -244,18 +256,18 @@
       border-radius: 8px;
       padding: 1rem 1.1rem;
     }
-    .comment-block img {
+    .comment-block img, .like-block img {
       width: 42px;
       height: 42px;
       border-radius: 50%;
       object-fit: cover;
       background: #111;
     }
-    .comment-content {
+    .comment-content, .like-content {
       flex: 1;
       min-width: 0;
     }
-    .comment-author {
+    .comment-author, .like-author {
       font-weight: bold;
       color: var(--primary-color);
       margin-bottom: 0.2rem;
@@ -347,18 +359,31 @@
         <div class="blog-actions">
           <% if (user) { %>
             <form action="/blog/<%= blog._id %>/like" method="POST" style="display:inline;">
-              <button class="action-btn <%= blog.likes.includes(user._id) ? 'liked' : '' %>" type="submit">
-                <i class="fas <%= blog.likes.includes(user._id) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
-                <%= blog.likes.includes(user._id) ? 'Unlike' : 'Like' %>
+              <button class="action-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" type="submit">
+                <i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
+                <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %>
               </button>
             </form>
-            <form action="<%= blog.isFollowing ? '/user/unfollow/' : '/user/follow/' %><%= blog.createdBy._id %>" method="POST" style="display:inline;">
-              <button class="follow-btn <%= blog.isFollowing ? 'following' : '' %>" type="submit">
-                <i class="fas <%= blog.isFollowing ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
-                <%= blog.isFollowing ? 'Unfollow' : 'Follow' %>
-              </button>
-            </form>
+            <% if (!blog.isOwn) { %>
+              <% if (blog.followStatus === 'requested') { %>
+                <form action="/user/cancel-follow/<%= blog.createdBy._id %>" method="POST" style="display:inline;">
+                  <button class="follow-btn cancel" type="submit">
+                    <i class="fas fa-user-times"></i> Cancel Request
+                  </button>
+                </form>
+              <% } else { %>
+                <form action="<%= blog.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= blog.createdBy._id %>" method="POST" style="display:inline;">
+                  <button class="follow-btn <%= blog.followStatus === 'following' ? 'following' : '' %>" type="submit">
+                    <i class="fas <%= blog.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
+                    <%= blog.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
+                  </button>
+                </form>
+              <% } %>
+            <% } %>
           <% } %>
+          <button class="likes-btn" onclick="showLikes('<%= blog._id %>')">
+            <i class="fas fa-heart"></i> View Likes
+          </button>
           <button class="comments-btn" onclick="showComments('<%= blog._id %>')">
             <i class="fas fa-comments"></i> View Comments
           </button>
@@ -366,6 +391,25 @@
             <i class="fas fa-arrow-right"></i> Read Blog
           </a>
         </div>
+      </div>
+      <!-- Likes Modal -->
+      <div id="likesModal-<%= blog._id %>" class="modal">
+        <button class="close-btn" onclick="hideLikes('<%= blog._id %>')">&times;</button>
+        <h3><i class="fas fa-heart"></i> Likes</h3>
+        <% if (blog.likes.length === 0) { %>
+          <div style="color:#b2becd;font-size:1.06rem;">No likes yet.</div>
+        <% } %>
+        <% blog.likes.forEach(liker => { %>
+          <div class="like-block">
+            <img src="<%= liker.profileImageURL %>" alt="Profile Image">
+            <div class="like-content">
+              <div class="like-author"><%= liker.fullname %></div>
+              <% if (currentFollowerIds.includes(liker._id.toString())) { %>
+                <span class="badge" style="background:var(--success-color);color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.85rem;">Your Follower</span>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
       </div>
       <!-- Comments Modal -->
       <div id="commentsModal-<%= blog._id %>" class="modal">
@@ -389,6 +433,20 @@
     </div>
   </div>
   <script>
+    function showLikes(id) {
+      let modal = document.getElementById('likesModal-' + id);
+      modal.style.display = 'block';
+      setTimeout(() => {
+        modal.classList.add('active');
+      }, 8);
+    }
+    function hideLikes(id) {
+      let modal = document.getElementById('likesModal-' + id);
+      modal.classList.remove('active');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
+    }
     function showComments(id) {
       let modal = document.getElementById('commentsModal-' + id);
       modal.style.display = 'block';
