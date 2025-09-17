@@ -1,9 +1,11 @@
+// routes/profile.js
 const { Router } = require("express");
 const fs = require("fs").promises;
 const { randomBytes, createHmac } = require("crypto");
 const User = require("../models/user");
 const Blog = require("../models/blog");
 const Comment = require("../models/comments");
+const Notification = require("../models/notification");
 const { createTokenForUser } = require("../services/authentication");
 const cloudinaryUpload = require("../middlewares/cloudinaryUpload");
 const mongoose = require("mongoose");
@@ -11,12 +13,14 @@ const mongoose = require("mongoose");
 const router = Router();
 
 // Utility: Render Profile with Defaults
-const renderProfile = (res, user, profileUser, blogs, isFollowing = false, messages = {}) => {
+const renderProfile = (res, user, profileUser, blogs, isFollowing = false, followStatus = "follow", commonFollowers = [], messages = {}) => {
   return res.render("profile", {
     user: user || null,
     profileUser,
     blogs: blogs || [],
     isFollowing,
+    followStatus,
+    commonFollowers,
     success_msg: messages.success_msg || null,
     error_msg: messages.error_msg || null,
   });
@@ -42,13 +46,13 @@ router.get("/", async (req, res) => {
       .populate("likes", "fullname profileImageURL")
       .sort({ createdAt: -1 });
 
-    renderProfile(res, req.user, profileUser, blogs, false, {
+    renderProfile(res, req.user, profileUser, blogs, false, "own", [], {
       success_msg: req.query.success_msg,
       error_msg: req.query.error_msg,
     });
   } catch (err) {
     console.error("Error loading profile:", err);
-    renderProfile(res, req.user, null, [], false, { error_msg: "Failed to load profile" });
+    renderProfile(res, req.user, null, [], false, "follow", [], { error_msg: "Failed to load profile" });
   }
 });
 
@@ -58,7 +62,7 @@ router.get("/:id", async (req, res) => {
     console.log("Profile route hit for ID:", req.params.id); // Debug log
     if (!mongoose.isValidObjectId(req.params.id)) {
       console.log("Invalid ObjectId:", req.params.id);
-      return renderProfile(res, req.user, null, [], false, { error_msg: "Invalid user ID" });
+      return renderProfile(res, req.user, null, [], false, "follow", [], { error_msg: "Invalid user ID" });
     }
 
     const profileUser = await User.findById(req.params.id)
@@ -71,7 +75,7 @@ router.get("/:id", async (req, res) => {
 
     if (!profileUser) {
       console.log("User not found for ID:", req.params.id);
-      return renderProfile(res, req.user, null, [], false, { error_msg: "User not found" });
+      return renderProfile(res, req.user, null, [], false, "follow", [], { error_msg: "User not found" });
     }
 
     const blogs = await Blog.find({ createdBy: req.params.id })
@@ -83,13 +87,33 @@ router.get("/:id", async (req, res) => {
       ? profileUser.followers.some((follower) => follower._id.equals(req.user._id))
       : false;
 
-    renderProfile(res, req.user, profileUser, blogs, isFollowing, {
+    let followStatus = "follow";
+    let commonFollowers = [];
+    if (req.user) {
+      const pending = await Notification.findOne({
+        sender: req.user._id,
+        recipient: req.params.id,
+        type: "FOLLOW_REQUEST",
+        status: "PENDING",
+      });
+      followStatus = isFollowing ? "following" : pending ? "requested" : "follow";
+
+      const currentUser = await User.findById(req.user._id).populate(
+        "followers",
+        "fullname profileImageURL _id"
+      );
+      commonFollowers = profileUser.followers.filter((f) =>
+        currentUser.followers.some((cf) => cf._id.equals(f._id))
+      );
+    }
+
+    renderProfile(res, req.user, profileUser, blogs, isFollowing, followStatus, commonFollowers, {
       success_msg: req.query.success_msg,
       error_msg: req.query.error_msg,
     });
   } catch (err) {
     console.error("Error loading profile for ID:", req.params.id, err);
-    renderProfile(res, req.user, null, [], false, { error_msg: "Failed to load profile" });
+    renderProfile(res, req.user, null, [], false, "follow", [], { error_msg: "Failed to load profile" });
   }
 });
 
