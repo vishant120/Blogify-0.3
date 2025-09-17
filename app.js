@@ -1,4 +1,3 @@
-// app.js (or index.js)
 require('dotenv').config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -19,7 +18,12 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Validate environment variables
-const requiredEnvVars = ['MONGODB_URI', 'PORT', 'JWT_SECRET', 'EMAIL_USER', 'EMAIL_PASS'];
+const requiredEnvVars = [
+  'MONGODB_URI',
+  'JWT_SECRET',
+  'EMAIL_USER',
+  'EMAIL_PASS'
+];
 requiredEnvVars.forEach((varName) => {
   if (!process.env[varName]) {
     console.error(`Error: Environment variable ${varName} is missing`);
@@ -29,7 +33,7 @@ requiredEnvVars.forEach((varName) => {
 
 // Debug: Log environment variables (mask sensitive info)
 console.log('MONGODB_URI:', process.env.MONGODB_URI);
-console.log('PORT:', process.env.PORT);
+console.log('PORT:', PORT);
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
 console.log('EMAIL_USER:', process.env.EMAIL_USER);
 console.log('EMAIL_PASS:', '****'); // Mask password
@@ -38,7 +42,10 @@ console.log('EMAIL_PASS:', '****'); // Mask password
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
+  });
 
 // Middleware
 app.use(methodOverride("_method"));
@@ -56,7 +63,7 @@ app.set("views", path.resolve("./views"));
 app.locals.moment = moment;
 
 // Error Handling Utility
-const renderWithError = (res, view, data, errorMsg, redirectUrl = "/") => {
+const renderWithError = (res, view, data, errorMsg) => {
   console.error(`Error in ${view}:`, errorMsg);
   return res.render(view, { ...data, error_msg: errorMsg, success_msg: null });
 };
@@ -135,8 +142,6 @@ app.get("/search", async (req, res) => {
         .populate("followers", "fullname profileImageURL")
         .sort({ fullname: 1 });
 
-      console.log("Found users:", users.map(u => u._id.toString()));
-
       blogs = await Blog.find({
         $or: [
           { title: { $regex: query, $options: "i" } },
@@ -169,6 +174,21 @@ app.use("/comment", commentRoute);
 app.use("/profile", profileRoute);
 app.use("/settings", settingsRoute);
 app.use("/notification", notificationRoute);
+
+// 404 Handler
+app.use((req, res, next) => {
+  res.status(404).send("404 Not Found");
+});
+
+// Uncaught Exception Handler
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection:', reason);
+  process.exit(1);
+});
 
 // Start Server
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
