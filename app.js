@@ -1,3 +1,4 @@
+// app.js (or index.js)
 require('dotenv').config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -65,9 +66,18 @@ app.get("/", async (req, res) => {
   try {
     const Blog = require("./models/blog");
     const Comment = require("./models/comments");
+    const Notification = require("./models/notification");
+    const User = require("./models/user");
     const allBlogs = await Blog.find()
       .populate("createdBy", "fullname email profileImageURL followers")
+      .populate("likes", "fullname profileImageURL")
       .sort({ createdAt: -1 });
+
+    let currentFollowerIds = [];
+    if (req.user) {
+      const currentUser = await User.findById(req.user._id).select("followers");
+      currentFollowerIds = currentUser.followers.map(id => id.toString());
+    }
 
     const blogsWithComments = await Promise.all(
       allBlogs.map(async (blog) => {
@@ -78,13 +88,24 @@ app.get("/", async (req, res) => {
         const isFollowing = req.user
           ? blog.createdBy.followers.some((follower) => follower._id.equals(req.user._id))
           : false;
-        return { ...blog._doc, comments, isFollowing };
+        const isOwn = req.user ? blog.createdBy._id.equals(req.user._id) : false;
+        const pendingRequest = req.user
+          ? await Notification.findOne({
+              sender: req.user._id,
+              recipient: blog.createdBy._id,
+              type: "FOLLOW_REQUEST",
+              status: "PENDING",
+            })
+          : null;
+        const followStatus = isFollowing ? "following" : pendingRequest ? "requested" : "follow";
+        return { ...blog._doc, comments, isFollowing, isOwn, followStatus, likes: blog.likes };
       })
     );
 
     res.render("home", {
       user: req.user || null,
       blogs: blogsWithComments,
+      currentFollowerIds,
       success_msg: req.query.success_msg || null,
       error_msg: req.query.error_msg || null,
     });
