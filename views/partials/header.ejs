@@ -5,246 +5,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Arial, sans-serif;
-    }
+    /* ... your existing styles ... */
 
-    :root {
-      --primary-color: #3498db;
-      --secondary-color: #2c3e50;
-      --dark-bg: #1a1a1a;
-      --card-bg: #2a2a2a;
-      --text-primary: #ffffff;
-      --text-secondary: #b0b0b0;
-      --border-color: #404040;
-      --hover-color: #3a3a3a;
-    }
-
-    header {
-      background-color: var(--secondary-color);
-      padding: 1rem;
-      border-bottom: 1px solid var(--border-color);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-
-    nav {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    nav a.logo {
-      color: var(--primary-color);
-      text-decoration: none;
-      font-size: 1.8rem;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: color 0.3s;
-    }
-
-    nav a.logo:hover {
-      color: #2980b9;
-    }
-
-    nav ul.main-nav {
-      list-style: none;
-      display: flex;
-      gap: 2rem;
-      align-items: center;
-    }
-
-    nav ul.main-nav li a {
-      color: var(--text-primary);
-      text-decoration: none;
-      font-size: 1rem;
-      transition: color 0.3s;
-    }
-
-    nav ul.main-nav li a:hover {
-      color: var(--primary-color);
-    }
-
-    nav form {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    nav form input {
-      padding: 0.5rem 1rem;
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 0.9rem;
-      transition: border-color 0.3s;
-    }
-
-    nav form input:focus {
-      outline: none;
-      border-color: var(--primary-color);
-    }
-
-    nav form button {
-      padding: 0.5rem 1rem;
-      background-color: var(--primary-color);
-      border: none;
-      border-radius: 8px;
-      color: var(--text-primary);
-      cursor: pointer;
-      transition: background-color 0.3s, transform 0.2s;
-    }
-
-    nav form button:hover {
-      background-color: #2980b9;
-      transform: scale(1.05);
-    }
-
-    .hamburger {
-      display: none;
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: var(--text-primary);
-      cursor: pointer;
-      transition: color 0.3s;
-    }
-
-    .hamburger:hover {
-      color: var(--primary-color);
-    }
-
-    .dropdown {
+    /* --- Search Animation Styles --- */
+    .search-container {
       position: relative;
+      margin-left: 1rem;
+      display: flex;
+      align-items: center;
     }
-
-    .dropdown-toggle {
+    .search-icon-btn {
       background: none;
       border: none;
       color: var(--text-primary);
-      font-size: 1rem;
+      font-size: 1.3rem;
       cursor: pointer;
+      padding: 0.45rem;
+      border-radius: 50%;
+      transition: background 0.2s;
+      z-index: 10;
+    }
+    .search-icon-btn:focus {
+      outline: none;
+      background: var(--hover-color);
+    }
+    .animated-search-form {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%) scaleX(0);
+      transform-origin: right;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 30px;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.5rem;
-      border-radius: 50px;
-      transition: background-color 0.3s;
-    }
-
-    .dropdown-toggle:hover {
-      background-color: var(--hover-color);
-    }
-
-    .dropdown-toggle img {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .dropdown-menu {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      min-width: 200px;
+      padding: 0.35rem 0.8rem 0.35rem 1.2rem;
+      transition: transform 0.38s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.2s;
       opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: all 0.3s ease;
-      z-index: 1001;
+      min-width: 220px;
+      box-shadow: 0 2px 18px 0 rgba(0,0,0,0.13);
+      z-index: 9;
     }
-
-    .dropdown-menu.active {
+    .animated-search-form.open {
+      transform: translateY(-50%) scaleX(1);
       opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
     }
-
-    .dropdown-menu a {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
+    .animated-search-form input {
+      background: transparent;
+      border: none;
       color: var(--text-primary);
-      text-decoration: none;
-      transition: background-color 0.3s;
+      font-size: 0.97rem;
+      width: 140px;
+      transition: width 0.3s;
     }
-
-    .dropdown-menu a:hover {
-      background-color: var(--hover-color);
+    .animated-search-form input:focus {
+      outline: none;
+      width: 200px;
+    }
+    .animated-search-form button {
+      background: var(--primary-color);
+      border: none;
+      color: #fff;
+      padding: 0.42rem 0.92rem;
+      border-radius: 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .animated-search-form button:hover {
+      background: #2980b9;
     }
 
     @media (max-width: 768px) {
-      nav ul.main-nav {
-        display: none;
-        flex-direction: column;
-        width: 100%;
-        background-color: var(--card-bg);
-        padding: 1rem;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        border-bottom: 1px solid var(--border-color);
+      .search-container {
+        margin-left: 0.5rem;
       }
-
-      nav ul.main-nav.active {
-        display: flex;
-      }
-
-      .hamburger {
-        display: block;
-      }
-
-      nav form {
-        width: 100%;
-        margin-top: 1rem;
-      }
-
-      nav form input {
-        flex: 1;
-      }
-
-      .dropdown-menu {
-        width: 100%;
-        right: 0;
+      .animated-search-form {
+        min-width: 100vw;
+        right: -1rem;
       }
     }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--dark-bg);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--border-color);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--text-secondary);
-    }
+    /* --- End Search Animation Styles --- */
   </style>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Hamburger menu
       const hamburger = document.querySelector('.hamburger');
       const navMenu = document.querySelector('nav ul.main-nav');
       const dropdownToggle = document.querySelector('.dropdown-toggle');
@@ -267,6 +114,44 @@
           }
         });
       }
+
+      // --- Search Animation Logic ---
+      const searchIconBtn = document.querySelector('.search-icon-btn');
+      const searchForm = document.querySelector('.animated-search-form');
+      const searchInput = searchForm ? searchForm.querySelector('input[name="q"]') : null;
+
+      if (searchIconBtn && searchForm && searchInput) {
+        let isOpen = false;
+        searchIconBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isOpen = !isOpen;
+          searchForm.classList.toggle('open');
+          if (isOpen) {
+            setTimeout(() => searchInput.focus(), 230);
+          } else {
+            searchForm.reset();
+          }
+        });
+
+        // Close on click outside
+        document.addEventListener('click', (e) => {
+          if (isOpen && !searchForm.contains(e.target) && !searchIconBtn.contains(e.target)) {
+            searchForm.classList.remove('open');
+            isOpen = false;
+            searchForm.reset();
+          }
+        });
+
+        // Optional: close on Esc key
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            searchForm.classList.remove('open');
+            isOpen = false;
+            searchForm.reset();
+          }
+        });
+      }
+      // --- End Search Animation Logic ---
     });
   </script>
 </head>
@@ -299,10 +184,15 @@
           </div>
         </div>
       <% } %>
-      <form action="/search" method="GET">
-        <input type="text" name="q" placeholder="Search users or blogs..." aria-label="Search">
-        <button type="submit"><i class="fas fa-search"></i></button>
-      </form>
+      <!-- Animated Search Bar -->
+      <div class="search-container">
+        <button class="search-icon-btn" title="Search"><i class="fas fa-search"></i></button>
+        <form action="/search" method="GET" class="animated-search-form" autocomplete="off">
+          <input type="text" name="q" placeholder="Search users or blogs..." aria-label="Search" />
+          <button type="submit"><i class="fas fa-arrow-right"></i></button>
+        </form>
+      </div>
+      <!-- End Animated Search Bar -->
     </nav>
   </header>
 </body>
