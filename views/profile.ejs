@@ -1,3 +1,4 @@
+<!-- views/profile.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,8 +104,16 @@
     .follow-btn.unfollow {
       background: var(--danger);
     }
+    .follow-btn.cancel {
+      background: var(--danger);
+    }
+    .follow-btn.requested {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
     .follow-btn:hover { background: #219653; transform: scale(1.04);}
     .follow-btn.unfollow:hover { background: #c0392b;}
+    .follow-btn.cancel:hover { background: #c0392b;}
     /* Popups */
     .popup {
       display: none;
@@ -328,17 +337,30 @@
             <span class="following-toggle" tabindex="0" aria-label="View Following">
               Following: <%= profileUser.following?.length || 0 %>
             </span>
+            <% if (user && user._id.toString() !== profileUser._id.toString()) { %>
+              <span class="common-toggle" tabindex="0" aria-label="View Common Followers">
+                Common Followers: <%= commonFollowers.length %>
+              </span>
+            <% } %>
           </div>
         </div>
       </div>
       <div class="profile-actions">
         <% if (user && user._id.toString() !== profileUser._id.toString()) { %>
-          <form action="<%= isFollowing ? `/user/unfollow/${profileUser._id}` : `/user/follow/${profileUser._id}` %>" method="POST" style="margin:0;">
-            <button class="follow-btn <%= isFollowing ? 'unfollow' : '' %>" type="submit">
-              <i class="fas <%= isFollowing ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
-              <%= isFollowing ? 'Unfollow' : 'Follow' %>
-            </button>
-          </form>
+          <% if (followStatus === 'requested') { %>
+            <form action="/user/cancel-follow/<%= profileUser._id %>" method="POST" style="margin:0;">
+              <button class="follow-btn cancel" type="submit">
+                <i class="fas fa-user-times"></i> Cancel Request
+              </button>
+            </form>
+          <% } else { %>
+            <form action="<%= followStatus === 'following' ? `/user/unfollow/${profileUser._id}` : `/user/follow/${profileUser._id}` %>" method="POST" style="margin:0;">
+              <button class="follow-btn <%= followStatus === 'following' ? 'unfollow' : '' %>" type="submit">
+                <i class="fas <%= followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
+                <%= followStatus === 'following' ? 'Unfollow' : 'Follow' %>
+              </button>
+            </form>
+          <% } %>
         <% } %>
       </div>
       <!-- Followers Popup -->
@@ -371,6 +393,23 @@
             <div class="popup-list-user">
               <img src="<%= following.profileImageURL || '/default-profile.png' %>" alt="<%= following.fullname %>'s Profile Image">
               <a href="/profile/<%= following._id %>"><%= following.fullname %></a>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+      <!-- Common Followers Popup -->
+      <div class="popup common-popup">
+        <h3><i class="fas fa-user-group"></i> Common Followers</h3>
+        <button class="close-btn close-common" aria-label="Close Common Followers">
+          <i class="fas fa-times"></i>
+        </button>
+        <% if (commonFollowers.length === 0) { %>
+          <p style="color:var(--text-dim);">No common followers.</p>
+        <% } else { %>
+          <% commonFollowers.forEach(follower => { %>
+            <div class="popup-list-user">
+              <img src="<%= follower.profileImageURL || '/default-profile.png' %>" alt="<%= follower.fullname %>'s Profile Image">
+              <a href="/profile/<%= follower._id %>"><%= follower.fullname %></a>
             </div>
           <% }) %>
         <% } %>
@@ -449,13 +488,16 @@
           });
         }
       });
-      // Followers/Following Popups logic
+      // Followers/Following/Common Popups logic
       const followersToggle = document.querySelector('.followers-toggle');
       const followingToggle = document.querySelector('.following-toggle');
+      const commonToggle = document.querySelector('.common-toggle');
       const followersPopup = document.querySelector('.followers-popup');
       const followingPopup = document.querySelector('.following-popup');
+      const commonPopup = document.querySelector('.common-popup');
       const closeFollowers = document.querySelector('.close-followers');
       const closeFollowing = document.querySelector('.close-following');
+      const closeCommon = document.querySelector('.close-common');
       const overlay = document.querySelector('.popup-overlay');
       const showPopup = (popup) => {
         if (popup) {
@@ -492,14 +534,28 @@
       if (closeFollowing && followingPopup) {
         closeFollowing.addEventListener('click', () => hidePopup(followingPopup));
       }
+      if (commonToggle && commonPopup) {
+        commonToggle.addEventListener('click', () => showPopup(commonPopup));
+        commonToggle.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            showPopup(commonPopup);
+          }
+        });
+      }
+      if (closeCommon && commonPopup) {
+        closeCommon.addEventListener('click', () => hidePopup(commonPopup));
+      }
       overlay.addEventListener('click', () => {
         hidePopup(followersPopup);
         hidePopup(followingPopup);
+        hidePopup(commonPopup);
       });
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           hidePopup(followersPopup);
           hidePopup(followingPopup);
+          hidePopup(commonPopup);
         }
       });
     });
