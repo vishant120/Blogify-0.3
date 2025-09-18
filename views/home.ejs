@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home | Blogifyer</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
   <style>
     :root {
       --primary-color: #1abc9c;
@@ -59,7 +60,7 @@
     }
     .blogs-list {
       display: grid;
-      grid-template-columns: repeat(1, minmax(350px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 2rem;
     }
     .blog-card {
@@ -404,9 +405,6 @@
             <img src="<%= liker.profileImageURL %>" alt="Profile Image">
             <div class="like-content">
               <div class="like-author"><%= liker.fullname %></div>
-              <% if (currentFollowerIds.includes(liker._id.toString())) { %>
-                <span class="badge" style="background:var(--success-color);color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.85rem;">Your Follower</span>
-              <% } %>
             </div>
           </div>
         <% }) %>
