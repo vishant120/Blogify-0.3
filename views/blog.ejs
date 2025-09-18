@@ -1,206 +1,530 @@
+<!-- views/home.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= blog.title %> | Blogify</title>
+  <title>Home | Blogifyer</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
   <style>
-    /* --- Modal styles (bottom-up scrollable) --- */
-    .comments-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.6);
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-      z-index: 1000;
+    :root {
+      --primary-color: #1abc9c;
+      --secondary-color: #34495e;
+      --success-color: #2ecc71;
+      --danger-color: #e74c3c;
+      --dark-bg: #181c20;
+      --card-bg: #23272b;
+      --text-primary: #fff;
+      --text-secondary: #b2becd;
+      --border-color: #262b2f;
+      --hover-bg: #20252a;
+      --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
     }
-    .comments-modal.show { display: flex; }
-
-    .comments-drawer {
+    body {
+      background: var(--dark-bg);
+      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+    }
+    .main-container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 4.5rem 1rem 2rem;
+    }
+    h1 {
+      font-size: 2.4rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .alert {
+      padding: 1rem;
+      border-radius: 7px;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .alert-success {
+      background: rgba(46, 204, 113, 0.1);
+      color: var(--success-color);
+    }
+    .alert-error {
+      background: rgba(231,76,60,0.1);
+      color: var(--danger-color);
+    }
+    .blogs-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+    .blog-card {
+      background: var(--card-bg);
+      border-radius: 1.2rem;
+      box-shadow: var(--shadow);
+      padding: 2rem 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 2rem;
+      border: 1.5px solid var(--border-color);
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .blog-card:hover {
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 12px 30px rgba(26, 188, 156, 0.08);
+      border-color: var(--primary-color);
+    }
+    .blog-cover {
+      border-radius: 9px;
+      max-height: 270px;
       width: 100%;
-      height: 80vh;
-      background: #1e1e1e;
-      border-top-left-radius: 12px;
-      border-top-right-radius: 12px;
-      transform: translateY(100%);
-      transition: transform .35s ease;
+      object-fit: cover;
+      margin-bottom: 1.2rem;
+      border: 1px solid var(--border-color);
+      background: #191919;
+    }
+    .author-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.6rem;
+    }
+    .author-img {
+      width: 43px;
+      height: 43px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-color);
+      background: #0d0f12;
+    }
+    .author-details {
       display: flex;
       flex-direction: column;
     }
-    .comments-modal.show .comments-drawer { transform: translateY(0); }
-
-    .comments-header {
-      padding: 1rem;
-      border-bottom: 1px solid #333;
+    .author-details a {
+      color: var(--primary-color);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .author-details a:hover {
+      text-decoration: underline;
+    }
+    .blog-title {
+      font-size: 1.45rem;
+      font-weight: bold;
+      margin-bottom: 0.3rem;
+      line-height: 1.2;
+      color: var(--primary-color);
+    }
+    .blog-title a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .blog-title a:hover {
+      color: #16a085;
+    }
+    .blog-meta {
+      color: var(--text-secondary);
+      font-size: 0.91rem;
+      margin-bottom: 1rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    .blog-excerpt {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      margin-bottom: 1.2rem;
+      line-height: 1.7;
+    }
+    .blog-excerpt a {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+    .blog-excerpt a:hover {
+      text-decoration: underline;
+    }
+    .blog-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      margin-top: 0.5rem;
+      align-items: center;
+    }
+    .action-btn, .follow-btn, .comments-btn, .likes-btn {
+      border: none;
+      outline: none;
+      border-radius: 6px;
+      padding: 0.47rem 1.13rem;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--text-primary);
+      background: var(--primary-color);
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 0.4rem;
+      transition: background 0.2s, transform 0.2s;
     }
-    .comments-header h3 { margin: 0; color:#ecf0f1; }
-    .comments-body {
-      flex: 1;
+    .action-btn.liked {
+      background: var(--danger-color);
+    }
+    .action-btn:hover,
+    .comments-btn:hover,
+    .likes-btn:hover {
+      background: #16a085;
+      transform: scale(1.05);
+    }
+    .follow-btn {
+      background: var(--success-color);
+    }
+    .follow-btn.following {
+      background: var(--danger-color);
+    }
+    .follow-btn.requested {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+    .follow-btn.cancel {
+      background: var(--danger-color);
+    }
+    .follow-btn:hover {
+      background: #219653;
+      transform: scale(1.05);
+    }
+    .follow-btn.following:hover {
+      background: #c0392b;
+    }
+    .follow-btn.cancel:hover {
+      background: #c0392b;
+    }
+    /* Modals Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100vw;
+      max-width: 100vw;
+      height: 78vh;
       overflow-y: auto;
-      padding: 1rem;
+      background: var(--card-bg);
+      z-index: 9000;
+      box-shadow: 0 -6px 28px rgba(0,0,0,0.18);
+      border-top-left-radius: 1.1rem;
+      border-top-right-radius: 1.1rem;
+      padding: 2.2rem 1.7rem 1.5rem;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
     }
-
-    .single-comment {
-      background: #2a2a2a;
-      border-radius: 6px;
-      padding: .75rem;
-      margin-bottom: .75rem;
-      display: flex;
-      gap: .75rem;
-    }
-    .single-comment img {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-    .comment-meta {
-      font-size: .8rem;
-      color: #aaa;
+    .modal.active {
+      display: block;
+      transform: translateY(0);
     }
     .close-btn {
+      position: absolute;
+      right: 18px;
+      top: 13px;
+      font-size: 2rem;
       background: none;
       border: none;
-      color: #ecf0f1;
-      font-size: 1.4rem;
+      color: var(--text-primary);
       cursor: pointer;
+      transition: color 0.2s;
     }
-
-    /* --- (keep your existing mobile tweaks) --- */
-    @media (max-width: 768px) {
-      div[style*='max-width: 800px'] { margin: 1rem; padding: 1rem; }
-      h1 { font-size: 1.5rem; }
-      div[style*='display: flex; gap: 1rem'] { flex-direction: column; gap: 0.5rem; }
+    .close-btn:hover {
+      color: var(--danger-color);
+    }
+    .modal h3 {
+      margin-top: 0;
+      color: var(--primary-color);
+      margin-bottom: 1.2rem;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+    }
+    .comment-block, .like-block {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.1rem;
+      margin-bottom: 1.2rem;
+      background: var(--hover-bg);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+    }
+    .comment-block img, .like-block img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #111;
+    }
+    .comment-content, .like-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .comment-author, .like-author {
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 0.2rem;
+    }
+    .comment-text {
+      color: var(--text-secondary);
+      margin-bottom: 0.3rem;
+      word-break: break-word;
+    }
+    .comment-time {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    /* Animations */
+    .blog-card {
+      animation: blogFadeIn 0.7s cubic-bezier(0.5,1.6,0.4,0.9);
+    }
+    @keyframes blogFadeIn {
+      from { opacity: 0; transform: translateY(25px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    @media (max-width: 900px) {
+      .main-container {
+        padding: 3.5rem 0.5rem 1.2rem;
+      }
+      .blogs-list {
+        gap: 1.2rem;
+      }
+    }
+    @media (max-width: 600px) {
+      .main-container {
+        padding-top: 2.2rem;
+      }
+      h1 {
+        font-size: 1.22rem;
+      }
+      .blog-card {
+        padding: 1.3rem 0.7rem 1.1rem;
+      }
+      .blogs-list {
+        grid-template-columns: 1fr;
+        gap: 0.7rem;
+      }
+    }
+    .likes-preview, .comments-preview {
+      padding: 0.47rem 1.13rem;
+      border-radius: 6px;
+      background: var(--hover-bg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .likes-preview:hover, .comments-preview:hover {
+      background: var(--primary-color);
+      color: var(--text-primary);
+      transform: scale(1.05);
+    }
+    .likes-preview a, .comments-preview a {
+      color: inherit;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .likes-preview a:hover, .comments-preview a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
-
-<body style="background-color: #1a2634; color: #ecf0f1; margin: 0; font-family: 'Arial', sans-serif;">
+<body>
   <%- include('partials/header', { user }) %>
-
-  <div style="max-width: 800px; margin: 2rem auto; padding: 2rem; background-color: #2c3e50; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.3);">
+  <div class="main-container">
+    <h1><i class="fas fa-blog"></i> Latest Blogs</h1>
     <% if (success_msg) { %>
-      <p style="padding:1rem; margin-bottom:1rem; background:#d4edda; color:#155724; border-radius:4px;">
-        <i class="fas fa-check-circle"></i> <%= success_msg %>
-      </p>
+      <div class="alert alert-success"><i class="fas fa-check-circle"></i> <%= success_msg %></div>
     <% } %>
     <% if (error_msg) { %>
-      <p style="padding:1rem; margin-bottom:1rem; background:#f8d7da; color:#721c24; border-radius:4px;">
-        <i class="fas fa-exclamation-circle"></i> <%= error_msg %>
-      </p>
+      <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= error_msg %></div>
     <% } %>
-
-    <h1 style="font-size:2rem; color:#ecf0f1; margin-bottom:1rem;"><%= blog.title %></h1>
-
-    <% if (blog.coverImage) { %>
-      <img src="<%= blog.coverImage %>" alt="Cover" style="max-width:100%; border-radius:4px; margin-bottom:1rem; box-shadow:0 2px 8px rgba(0,0,0,.2);">
+    <div class="blogs-list">
+    <% if (blogs.length === 0) { %>
+      <div style="color:#b2becd;font-size:1.12rem;">No blogs found. Be the first to <a href="/blog/create" style="color:var(--primary-color);text-decoration:underline;">create a blog</a>!</div>
     <% } %>
-
-    <div style="font-size:.9rem; color:#7f8c8d; margin-bottom:1rem;">
-      By <a href="/profile/<%= blog.createdBy._id %>" style="color:#3498db; text-decoration:none;"
-            onmouseover="this.style.textDecoration='underline'"
-            onmouseout="this.style.textDecoration='none'"><i class="fas fa-user"></i> <%= blog.createdBy.fullname %></a>
-      <i class="fas fa-clock"></i> <%= moment(blog.createdAt).fromNow() %>
-    </div>
-
-    <div style="color:#ecf0f1; margin-bottom:2rem; line-height:1.6;"><p><%= blog.body %></p></div>
-
-    <div style="display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap;">
-      <% if (user) { %>
-        <form action="/blog/<%= blog._id %>/like" method="POST">
-          <button type="submit" style="padding:.5rem 1rem; border:none; border-radius:4px; cursor:pointer;
-            background-color:<%= blog.likes.includes(user._id) ? '#e74c3c' : '#3498db' %>; color:#fff;">
-            <i class="fas <%= blog.likes.includes(user._id) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
-            <%= blog.likes.includes(user._id) ? 'Unlike' : 'Like' %> (<%= blog.likes.length %>)
-          </button>
-        </form>
-
-        <% if (user._id.toString() === blog.createdBy._id.toString()) { %>
-          <form action="/blog/<%= blog._id %>?_method=DELETE" method="POST" class="delete-form">
-            <button type="submit" style="padding:.5rem 1rem; border:none; border-radius:4px; cursor:pointer; background:#e74c3c; color:#fff;">
-              <i class="fas fa-trash"></i> Delete
-            </button>
-          </form>
+    <% blogs.forEach(blog => { %>
+      <div class="blog-card">
+        <% if (blog.coverImage) { %>
+          <img src="<%= blog.coverImage %>" alt="Cover Image" class="blog-cover">
         <% } %>
-      <% } %>
-
-      <!-- Button opens the modal -->
-      <button type="button" onclick="openComments()" style="padding:.5rem 1rem; border:none; border-radius:4px; cursor:pointer; background:#3498db; color:#fff;">
-        <i class="fas fa-comments"></i> View Comments (<%= comments.length %>)
-      </button>
-    </div>
-
-    <!-- ========== MODAL / DRAWER ========== -->
-    <div id="commentsModal" class="comments-modal" onclick="if(event.target===this) closeComments()">
-      <div class="comments-drawer">
-        <div class="comments-header">
-          <h3><i class="fas fa-comments"></i> Comments</h3>
-          <button class="close-btn" onclick="closeComments()">&times;</button>
+        <div class="author-section">
+          <img src="<%= blog.createdBy.profileImageURL %>" alt="Profile Image" class="author-img">
+          <div class="author-details">
+            <a href="/profile/<%= blog.createdBy._id %>"><%= blog.createdBy.fullname %></a>
+            <span style="color:var(--text-secondary);font-size:0.95rem;">
+              <i class="fas fa-clock"></i> <%= moment(blog.createdAt).fromNow() %>
+            </span>
+          </div>
         </div>
-
-        <div class="comments-body">
-          <% comments.forEach(comment => { %>
-            <div class="single-comment">
-              <img src="<%= comment.createdBy.profileImageURL %>" alt="avatar">
-              <div>
-                <strong><%= comment.createdBy.fullname %></strong><br>
-                <%= comment.content %>
-                <div class="comment-meta">
-                  <i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %>
-                </div>
-
-                <% if (user && user._id.toString() === comment.createdBy._id.toString()) { %>
-                  <form action="/comment/<%= comment._id %>?_method=DELETE&blogId=<%= blog._id %>" method="POST"
-                        class="delete-form" style="display:inline-block; margin-top:.4rem;">
-                    <button type="submit" style="padding:.3rem .6rem; background:#e74c3c; border:none; border-radius:4px; color:#fff; cursor:pointer;">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </form>
-                <% } %>
-              </div>
-            </div>
-          <% }) %>
-
+        <div class="blog-title">
+          <a href="/blog/<%= blog._id %>"><%= blog.title %></a>
+        </div>
+        <div class="blog-meta">
+          <span><i class="fas fa-heart"></i> <%= blog.likes.length %> Likes</span>
+          <span><i class="fas fa-comments"></i> <%= blog.comments.length %> Comments</span>
+        </div>
+        <div class="blog-excerpt">
+          <%= blog.body.length > 220 ? blog.body.substring(0, 220) + "..." : blog.body %>
+          <a href="/blog/<%= blog._id %>">Read more</a>
+        </div>
+        <div class="blog-actions">
           <% if (user) { %>
-            <form action="/comment/<%= blog._id %>" method="POST" style="margin-top:1rem;">
-              <textarea name="content" required placeholder="Write a comment…" rows="3"
-                        style="width:100%; padding:.6rem; border-radius:4px; background:#2c3e50; color:#ecf0f1; border:1px solid #34495e;"></textarea>
-              <button type="submit" style="margin-top:.5rem; padding:.5rem 1rem; background:#3498db; border:none; border-radius:4px; color:#fff; cursor:pointer;">
-                Post Comment
+            <form action="/blog/<%= blog._id %>/like" method="POST" style="display:inline;">
+              <button class="action-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" type="submit">
+                <i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
+                <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %>
               </button>
             </form>
+            <% if (!blog.isOwn) { %>
+              <% if (blog.followStatus === 'requested') { %>
+                <form action="/user/cancel-follow/<%= blog.createdBy._id %>" method="POST" style="display:inline;">
+                  <button class="follow-btn cancel" type="submit">
+                    <i class="fas fa-user-times"></i> Cancel Request
+                  </button>
+                </form>
+              <% } else { %>
+                <form action="<%= blog.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= blog.createdBy._id %>" method="POST" style="display:inline;">
+                  <button class="follow-btn <%= blog.followStatus === 'following' ? 'following' : '' %>" type="submit">
+                    <i class="fas <%= blog.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
+                    <%= blog.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
+                  </button>
+                </form>
+              <% } %>
+            <% } %>
           <% } %>
+          <div class="likes-preview" onclick="showLikes('<%= blog._id %>')">
+            <i class="fa-light fa-heart"></i>
+            <% if (blog.likes.length === 0) { %>
+              No likes yet
+            <% } else { %>
+              Liked by
+              <% blog.likes.slice(0, 2).forEach((liker, index) => { %>
+                <% if (index > 0) { %>and<% } %>
+                <a href="/profile/<%= liker._id %>">
+                  <img src="<%= liker.profileImageURL %>" alt="<%= liker.fullname %>" style="width: 20px; height: 20px; border-radius: 50%; vertical-align: middle;">
+                  <%= liker.fullname %>
+                </a>
+              <% }) %>
+              <% if (blog.likes.length > 2) { %>
+                and <%= blog.likes.length - 2 %> others (<%= blog.likes.length %> total)
+              <% } %>
+            <% } %>
+          </div>
+          <% let uniqueCommenters = []; let seen = new Set(); %>
+          <% blog.comments.forEach(comment => { %>
+            <% let id = comment.createdBy._id.toString(); %>
+            <% if (!seen.has(id)) { %>
+              <% seen.add(id); %>
+              <% uniqueCommenters.push(comment.createdBy); %>
+            <% } %>
+          <% }) %>
+          <div class="comments-preview" onclick="showComments('<%= blog._id %>')">
+            <i class="fas fa-comments"></i>
+            <% if (uniqueCommenters.length === 0) { %>
+              No comments yet
+            <% } else { %>
+              Commented by
+              <% uniqueCommenters.slice(0, 2).forEach((commenter, index) => { %>
+                <% if (index > 0) { %>and<% } %>
+                <a href="/profile/<%= commenter._id %>">
+                  <img src="<%= commenter.profileImageURL %>" alt="<%= commenter.fullname %>" style="width: 20px; height: 20px; border-radius: 50%; vertical-align: middle;">
+                  <%= commenter.fullname %>
+                </a>
+              <% }) %>
+              <% if (uniqueCommenters.length > 2) { %>
+                and <%= uniqueCommenters.length - 2 %> others
+              <% } %>
+              (<%= blog.comments.length %> comments)
+            <% } %>
+          </div>
+          <a href="/blog/<%= blog._id %>" class="action-btn" style="background:var(--secondary-color);">
+            <i class="fas fa-arrow-right"></i> Read Blog
+          </a>
         </div>
       </div>
+      <!-- Likes Modal -->
+      <div id="likesModal-<%= blog._id %>" class="modal">
+        <button class="close-btn" onclick="hideLikes('<%= blog._id %>')">&times;</button>
+        <h3><i class="fas fa-heart"></i> Likes</h3>
+        <% if (blog.likes.length === 0) { %>
+          <div style="color:#b2becd;font-size:1.06rem;">No likes yet.</div>
+        <% } %>
+        <% blog.likes.forEach(liker => { %>
+          <div class="like-block">
+            <img src="<%= liker.profileImageURL %>" alt="Profile Image">
+            <div class="like-content">
+              <div class="like-author"><%= liker.fullname %></div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+      <!-- Comments Modal -->
+      <div id="commentsModal-<%= blog._id %>" class="modal">
+        <button class="close-btn" onclick="hideComments('<%= blog._id %>')">&times;</button>
+        <h3><i class="fas fa-comments"></i> Comments</h3>
+        <% if (blog.comments.length === 0) { %>
+          <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
+        <% } %>
+        <% blog.comments.forEach(comment => { %>
+          <div class="comment-block">
+            <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
+            <div class="comment-content">
+              <div class="comment-author"><%= comment.createdBy.fullname %></div>
+              <div class="comment-text"><%= comment.content %></div>
+              <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% }) %>
     </div>
-    <!-- ========== /MODAL ========== -->
   </div>
-
   <script>
-    /* --- modal helpers --- */
-    function openComments() {
-      document.getElementById('commentsModal').classList.add('show');
-      document.body.style.overflow = 'hidden';
+    function showLikes(id) {
+      let modal = document.getElementById('likesModal-' + id);
+      modal.style.display = 'block';
+      setTimeout(() => {
+        modal.classList.add('active');
+      }, 8);
     }
-    function closeComments() {
-      document.getElementById('commentsModal').classList.remove('show');
-      document.body.style.overflow = '';
+    function hideLikes(id) {
+      let modal = document.getElementById('likesModal-' + id);
+      modal.classList.remove('active');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
     }
-
-    /* --- existing delete confirm --- */
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.delete-form').forEach(form => {
-        form.addEventListener('submit', (e) => {
-          if (!confirm('Are you sure you want to delete this?')) e.preventDefault();
-        });
-      });
-    });
+    function showComments(id) {
+      let modal = document.getElementById('commentsModal-' + id);
+      modal.style.display = 'block';
+      setTimeout(() => {
+        modal.classList.add('active');
+      }, 8);
+    }
+    function hideComments(id) {
+      let modal = document.getElementById('commentsModal-' + id);
+      modal.classList.remove('active');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
+    }
   </script>
 </body>
 </html>
