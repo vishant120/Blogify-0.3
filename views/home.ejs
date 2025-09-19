@@ -299,24 +299,24 @@
     .modal {
       display: none;
       position: fixed;
-      left: 0;
-      bottom: 0;
-      width: 100vw;
-      max-width: 100vw;
-      height: 78vh;
+      top: 50%;
+      left: 50%;
+      width: 90vw;
+      max-width: 500px;
+      height: auto;
+      max-height: 80vh;
       overflow-y: auto;
       background: var(--card-bg);
       z-index: 9000;
-      box-shadow: 0 -6px 28px rgba(0,0,0,0.18);
-      border-top-left-radius: 1.1rem;
-      border-top-right-radius: 1.1rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      border-radius: 1.1rem;
       padding: 2.2rem 1.7rem 1.5rem;
-      transform: translateY(100%);
+      transform: translate(-50%, 100%);
       transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
     }
     .modal.active {
       display: block;
-      transform: translateY(0);
+      transform: translate(-50%, -50%);
     }
     .close-btn {
       position: absolute;
@@ -405,6 +405,10 @@
       .blogs-list {
         grid-template-columns: 1fr;
         gap: 0.7rem;
+      }
+      .modal {
+        width: 95vw;
+        padding: 1.5rem 1rem 1rem;
       }
     }
     .likes-preview, .comments-preview {
@@ -639,6 +643,11 @@
     }
 
     function showLikes(id) {
+      // Close comments modal for the same blog if open
+      const commentsModal = document.getElementById('commentsModal-' + id);
+      if (commentsModal && commentsModal.classList.contains('active')) {
+        hideComments(id);
+      }
       let modal = document.getElementById('likesModal-' + id);
       modal.style.display = 'block';
       setTimeout(() => {
@@ -653,6 +662,11 @@
       }, 400);
     }
     function showComments(id) {
+      // Close likes modal for the same blog if open
+      const likesModal = document.getElementById('likesModal-' + id);
+      if (likesModal && likesModal.classList.contains('active')) {
+        hideLikes(id);
+      }
       let modal = document.getElementById('commentsModal-' + id);
       modal.style.display = 'block';
       setTimeout(() => {
