@@ -158,7 +158,7 @@
       margin-top: 0.5rem;
       align-items: center;
     }
-    .action-btn, .follow-btn, .comments-btn, .likes-btn {
+    .action-btn, .follow-btn, .comments-btn, .likes-btn, .comment-like-btn {
       border: none;
       outline: none;
       border-radius: 6px;
@@ -172,12 +172,13 @@
       gap: 0.4rem;
       transition: background 0.2s, transform 0.2s;
     }
-    .action-btn.liked {
+    .action-btn.liked, .comment-like-btn.liked {
       background: var(--danger-color);
     }
     .action-btn:hover,
     .comments-btn:hover,
-    .likes-btn:hover {
+    .likes-btn:hover,
+    .comment-like-btn:hover {
       background: #16a085;
       transform: scale(1.05);
     }
@@ -303,25 +304,31 @@
       left: 50%;
       width: 90vw;
       max-width: 500px;
-      height: auto;
-      max-height: 80vh;
-      overflow-y: auto;
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
       background: var(--card-bg);
       z-index: 9000;
       box-shadow: 0 8px 32px rgba(0,0,0,0.25);
       border-radius: 1.1rem;
-      padding: 2.2rem 1.7rem 1.5rem;
+      padding: 0;
       transform: translate(-50%, 100%);
       transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
+      overflow: hidden;
     }
     .modal.active {
-      display: block;
+      display: flex;
       transform: translate(-50%, -50%);
     }
+    .modal-header {
+      flex-shrink: 0;
+      padding: 2.2rem 1.7rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
     .close-btn {
-      position: absolute;
-      right: 18px;
-      top: 13px;
       font-size: 2rem;
       background: none;
       border: none;
@@ -333,11 +340,21 @@
       color: var(--danger-color);
     }
     .modal h3 {
-      margin-top: 0;
+      margin: 0;
       color: var(--primary-color);
-      margin-bottom: 1.2rem;
       font-size: 1.3rem;
       letter-spacing: 1px;
+    }
+    .comments-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 1.7rem;
+    }
+    .comment-input {
+      flex-shrink: 0;
+      padding: 1.5rem 1.7rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      background: var(--hover-bg);
     }
     .comment-block, .like-block {
       display: flex;
@@ -382,12 +399,45 @@
       margin-bottom: 0.3rem;
       word-break: break-word;
     }
+    .comment-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
     .comment-time {
       font-size: 0.85rem;
       color: var(--text-secondary);
       display: flex;
       align-items: center;
       gap: 0.3rem;
+    }
+    .comment-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .comment-form textarea {
+      resize: vertical;
+      min-height: 80px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.8rem;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+    .comment-form button {
+      align-self: flex-end;
+      padding: 0.5rem 1.2rem;
+      background: var(--primary-color);
+      color: var(--text-primary);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .comment-form button:hover {
+      background: #16a085;
     }
     /* Animations */
     .blog-card {
@@ -421,7 +471,7 @@
       }
       .modal {
         width: 95vw;
-        padding: 1.5rem 1rem 1rem;
+        height: 85vh;
       }
     }
     .likes-preview, .comments-preview {
@@ -583,55 +633,83 @@
         </div>
         <!-- Likes Modal -->
         <div id="likesModal-<%= blog._id %>" class="modal">
-          <button class="close-btn" onclick="hideLikes('<%= blog._id %>')">&times;</button>
-          <h3><i class="fas fa-heart"></i> Likes</h3>
-          <% if (blog.likes.length === 0) { %>
-            <div style="color:#b2becd;font-size:1.06rem;">No likes yet.</div>
-          <% } %>
-          <% blog.likes.forEach(liker => { %>
-            <div class="like-block">
-              <img src="<%= liker.profileImageURL %>" alt="Profile Image">
-              <div class="like-content">
-                <div class="like-author">
-                  <a href="/profile/<%= liker._id %>"><%= liker.fullname %></a>
-                </div>
-                <% if (user && liker._id.toString() !== user._id.toString()) { %>
-                  <% if (liker.followStatus === 'requested') { %>
-                    <form action="/user/cancel-follow/<%= liker._id %>" method="POST" style="display:inline;">
-                      <button class="follow-btn cancel ajax-follow-btn" type="submit" data-user-id="<%= liker._id %>">
-                        <i class="fas fa-user-times"></i> Cancel Request
-                      </button>
-                    </form>
-                  <% } else { %>
-                    <form action="<%= liker.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= liker._id %>" method="POST" style="display:inline;">
-                      <button class="follow-btn <%= liker.followStatus === 'following' ? 'following' : '' %> ajax-follow-btn" type="submit" data-user-id="<%= liker._id %>">
-                        <i class="fas <%= liker.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
-                        <%= liker.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
-                      </button>
-                    </form>
+          <div class="modal-header">
+            <h3><i class="fas fa-heart"></i> Likes</h3>
+            <button class="close-btn" onclick="hideLikes('<%= blog._id %>')">&times;</button>
+          </div>
+          <div class="comments-list">
+            <% if (blog.likes.length === 0) { %>
+              <div style="color:#b2becd;font-size:1.06rem;">No likes yet.</div>
+            <% } %>
+            <% blog.likes.forEach(liker => { %>
+              <div class="like-block">
+                <img src="<%= liker.profileImageURL %>" alt="Profile Image">
+                <div class="like-content">
+                  <div class="like-author">
+                    <a href="/profile/<%= liker._id %>"><%= liker.fullname %></a>
+                  </div>
+                  <% if (user && liker._id.toString() !== user._id.toString()) { %>
+                    <% if (liker.followStatus === 'requested') { %>
+                      <form action="/user/cancel-follow/<%= liker._id %>" method="POST" style="display:inline;">
+                        <button class="follow-btn cancel ajax-follow-btn" type="submit" data-user-id="<%= liker._id %>">
+                          <i class="fas fa-user-times"></i> Cancel Request
+                        </button>
+                      </form>
+                    <% } else { %>
+                      <form action="<%= liker.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= liker._id %>" method="POST" style="display:inline;">
+                        <button class="follow-btn <%= liker.followStatus === 'following' ? 'following' : '' %> ajax-follow-btn" type="submit" data-user-id="<%= liker._id %>">
+                          <i class="fas <%= liker.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
+                          <%= liker.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
+                        </button>
+                      </form>
+                    <% } %>
                   <% } %>
-                <% } %>
+                </div>
               </div>
-            </div>
-          <% }) %>
+            <% }) %>
+          </div>
         </div>
         <!-- Comments Modal -->
         <div id="commentsModal-<%= blog._id %>" class="modal">
-          <button class="close-btn" onclick="hideComments('<%= blog._id %>')">&times;</button>
-          <h3><i class="fas fa-comments"></i> Comments</h3>
-          <% if (blog.comments.length === 0) { %>
-            <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
-          <% } %>
-          <% blog.comments.forEach(comment => { %>
-            <div class="comment-block">
-              <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
-              <div class="comment-content">
-                <div class="comment-author"><%= comment.createdBy.fullname %></div>
-                <div class="comment-text"><%= comment.content %></div>
-                <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
+          <div class="modal-header">
+            <h3><i class="fas fa-comments"></i> Comments</h3>
+            <button class="close-btn" onclick="hideComments('<%= blog._id %>')">&times;</button>
+          </div>
+          <div class="comments-list">
+            <% if (blog.comments.length === 0) { %>
+              <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
+            <% } %>
+            <% blog.comments.forEach(comment => { %>
+              <div class="comment-block">
+                <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
+                <div class="comment-content">
+                  <div class="comment-author"><%= comment.createdBy.fullname %></div>
+                  <div class="comment-text"><%= comment.content %></div>
+                  <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
+                  <div class="comment-actions">
+                    <% if (user) { %>
+                      <form action="/comment/<%= comment._id %>/like" method="POST" style="display:inline;">
+                        <button class="comment-like-btn <%= comment.likes && comment.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" type="submit">
+                          <i class="fas <%= comment.likes && comment.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
+                          <%= (comment.likes ? comment.likes.length : 0) %> <%= (comment.likes ? comment.likes.length : 0) === 1 ? 'Like' : 'Likes' %>
+                        </button>
+                      </form>
+                    <% } else { %>
+                      <span style="color: var(--text-secondary); font-size: 0.9rem;"><%= (comment.likes ? comment.likes.length : 0) %> <%= (comment.likes ? comment.likes.length : 0) === 1 ? 'Like' : 'Likes' %></span>
+                    <% } %>
+                  </div>
+                </div>
               </div>
+            <% }) %>
+          </div>
+          <% if (user) { %>
+            <div class="comment-input">
+              <form action="/comment/<%= blog._id %>" method="POST" class="comment-form">
+                <textarea name="content" placeholder="Write a comment..." required></textarea>
+                <button type="submit">Post Comment</button>
+              </form>
             </div>
-          <% }) %>
+          <% } %>
         </div>
       </div>
     <% }) %>
@@ -680,7 +758,7 @@
         hideComments(id);
       }
       let modal = document.getElementById('likesModal-' + id);
-      modal.style.display = 'block';
+      modal.style.display = 'flex';
       setTimeout(() => {
         modal.classList.add('active');
       }, 8);
@@ -699,7 +777,7 @@
         hideLikes(id);
       }
       let modal = document.getElementById('commentsModal-' + id);
-      modal.style.display = 'block';
+      modal.style.display = 'flex';
       setTimeout(() => {
         modal.classList.add('active');
       }, 8);
