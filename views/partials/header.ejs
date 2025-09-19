@@ -1,309 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Arial, sans-serif;
-    }
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+ <style>
+ * {
+ margin: 0;
+ padding: 0;
+ box-sizing: border-box;
+ font-family: 'Segoe UI', Arial, sans-serif;
+ }
 
-    :root {
-      --primary-color: #3498db;
-      --secondary-color: #2c3e50;
-      --dark-bg: #1a1a1a;
-      --card-bg: #2a2a2a;
-      --text-primary: #ffffff;
-      --text-secondary: #b0b0b0;
-      --border-color: #404040;
-      --hover-color: #3a3a3a;
-    }
+ :root {
+ --primary-color: #3498db;
+ --secondary-color: #2c3e50;
+ --dark-bg: #1a1a1a;
+ --card-bg: #2a2 a2a;
+ --text-primary: #ffffff;
+ --text-secondary: #b0b0b0;
+ --border-color: #404040;
+ --hover-color: #3a3a3a;
+ }
 
-    header {
-      background-color: var(--secondary-color);
-      padding: 1rem;
-      border-bottom: 1px solid var(--border-color);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
+ header {
+ background-color: var(--secondary-color);
+ padding: 1rem;
+ border-bottom: 1px solid var(--border-color);
+ position: sticky;
+ top: 0;
+ z-index: 1000;
+ }
 
-    nav {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+ nav {
+ max-width: 1200px;
+ margin: 0 auto;
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ flex-wrap: wrap;
+ }
 
-    nav a.logo {
-      color: var(--primary-color);
-      text-decoration: none;
-      font-size: 1.8rem;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: color 0.3s;
-    }
+ nav a.logo {
+ color: var(--primary-color);
+ text-decoration: none;
+ font-size: 1.8rem;
+ font-weight: bold;
+ display: flex;
+ align-items: center;
+ gap: 0.5rem;
+ transition: color 0.3s;
+ }
 
-    nav a.logo:hover {
-      color: #2980b9;
-    }
+ nav a.logo:hover {
+ color: #2980b9;
+ }
 
-    nav ul.main-nav {
-      list-style: none;
-      display: flex;
-      gap: 2rem;
-      align-items: center;
-    }
+ nav ul.main-nav {
+ list-style: none;
+ display: flex;
+ gap: 2rem;
+ align-items: center;
+ }
 
-    nav ul.main-nav li a {
-      color: var(--text-primary);
-      text-decoration: none;
-      font-size: 1rem;
-      transition: color 0.3s;
-    }
+ nav ul.main-nav li a {
+ color: var(--text-primary);
+ text-decoration: none;
+ font-size: 1rem;
+ transition: color 0.3s;
+ }
 
-    nav ul.main-nav li a:hover {
-      color: var(--primary-color);
-    }
+ nav ul.main-nav li a:hover {
+ color: var(--primary-color);
+ }
 
-    nav form {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
+ nav form {
+ display: flex;
+ gap: 0.5rem;
+ align-items: center;
+ }
 
-    nav form input {
-      padding: 0.5rem 1rem;
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 0.9rem;
-      transition: border-color 0.3s;
-    }
+ nav form input {
+ padding: 0.5rem 1rem;
+ background-color: var(--card-bg);
+ border: 1px solid var(--border-color);
+ border-radius: 8px;
+ color: var(--text-primary);
+ font-size: 0.9rem;
+ transition: border-color 0.3s;
+ }
 
-    nav form input:focus {
-      outline: none;
-      border-color: var(--primary-color);
-    }
+ nav form input:focus {
+ outline: none;
+ border-color: var(--primary-color);
+ }
 
-    nav form button {
-      padding: 0.5rem 1rem;
-      background-color: var(--primary-color);
-      border: none;
-      border-radius: 8px;
-      color: var(--text-primary);
-      cursor: pointer;
-      transition: background-color 0.3s, transform 0.2s;
-    }
+ nav form button {
+ padding: 0.5rem 1rem;
+ background-color: var(--primary-color);
+ border: none;
+ border-radius: 8px;
+ color: var(--text-primary);
+ cursor: pointer;
+ transition: background-color 0.3s, transform 0.2s;
+ }
 
-    nav form button:hover {
-      background-color: #2980b9;
-      transform: scale(1.05);
-    }
+ nav form button:hover {
+ background-color: #2980b9;
+ transform: scale(1.05);
+ }
 
-    .hamburger {
-      display: none;
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: var(--text-primary);
-      cursor: pointer;
-      transition: color 0.3s;
-    }
+ .hamburger {
+ display: none;
+ font-size: 1.5rem;
+ background: none;
+ border: none;
+ color: var(--text-primary);
+ cursor: pointer;
+ transition: color 0.3s;
+ }
 
-    .hamburger:hover {
-      color: var(--primary-color);
-    }
+ .hamburger:hover {
+ color: var(--primary-color);
+ }
 
-    .dropdown {
-      position: relative;
-    }
+ .user-dropdown {
+ position: relative;
+ }
 
-    .dropdown-toggle {
-      background: none;
-      border: none;
-      color: var(--text-primary);
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem;
-      border-radius: 50px;
-      transition: background-color 0.3s;
-    }
+ .user-dropdown-toggle {
+ background: none;
+ border: none;
+ color: var(--text-primary);
+ font-size: 1rem;
+ cursor: pointer;
+ display: flex;
+ align-items: center;
+ gap: 0.5rem;
+ padding: 0.5rem;
+ border-radius: 50px;
+ transition: background-color 0.3s;
+ }
 
-    .dropdown-toggle:hover {
-      background-color: var(--hover-color);
-    }
+ .user-dropdown-toggle:hover {
+ background-color: var(--hover-color);
+ }
 
-    .dropdown-toggle img {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
+ .user-dropdown-toggle img {
+ width: 30px;
+ height: 30px;
+ border-radius: 50%;
+ object-fit: cover;
+ }
 
-    .dropdown-menu {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      min-width: 200px;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: all 0.3s ease;
-      z-index: 1001;
-    }
+ .user-dropdown-menu {
+ position: absolute;
+ top: 100%;
+ right: 0;
+ background-color: var(--card-bg);
+ border: 1px solid var(--border-color);
+ border-radius: 8px;
+ box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+ min-width: 200px;
+ opacity: 0;
+ visibility: hidden;
+ transform: translateY(-10px);
+ transition: all 0.3s ease;
+ z-index: 1001;
+ }
 
-    .dropdown-menu.active {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
+ .user-dropdown-menu.active {
+ opacity: 1;
+ visibility: visible;
+ transform: translateY(0);
+ }
 
-    .dropdown-menu a {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      color: var(--text-primary);
-      text-decoration: none;
-      transition: background-color 0.3s;
-    }
+ .user-dropdown-menu a {
+ display: flex;
+ align-items: center;
+ gap: 0.75rem;
+ padding: 0.75rem 1rem;
+ color: var(--text-primary);
+ text-decoration: none;
+ transition: background-color 0.3s;
+ }
 
-    .dropdown-menu a:hover {
-      background-color: var(--hover-color);
-    }
+ .user-dropdown-menu a:hover {
+ background-color: var(--hover-color);
+ }
 
-    @media (max-width: 768px) {
-      nav ul.main-nav {
-        display: none;
-        flex-direction: column;
-        width: 100%;
-        background-color: var(--card-bg);
-        padding: 1rem;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        border-bottom: 1px solid var(--border-color);
-      }
+ @media (max-width: 768px) {
+ nav ul.main-nav {
+ display: none;
+ flex-direction: column;
+ width: 100%;
+ background-color: var(--card-bg);
+ padding: 1rem;
+ position: absolute;
+ top: 60px;
+ left: 0;
+ border-bottom: 1px solid var(--border-color);
+ }
 
-      nav ul.main-nav.active {
-        display: flex;
-      }
+ nav ul.main-nav.active {
+ display: flex;
+ }
 
-      .hamburger {
-        display: block;
-      }
+ .hamburger {
+ display: block;
+ }
 
-      nav form {
-        width: 100%;
-        margin-top: 1rem;
-      }
+ nav form {
+ width: 100%;
+ margin-top: 1rem;
+ }
 
-      nav form input {
-        flex: 1;
-      }
+ nav form input {
+ flex: 1;
+ }
 
-      .dropdown-menu {
-        width: 100%;
-        right: 0;
-      }
-    }
+ .user-dropdown-menu {
+ width: 100%;
+ right: 0;
+ }
+ }
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
+ /* Custom Scrollbar */
+ ::-webkit-scrollbar {
+ width: 8px;
+ }
 
-    ::-webkit-scrollbar-track {
-      background: var(--dark-bg);
-    }
+ ::-webkit-scrollbar-track {
+ background: var(--dark-bg);
+ }
 
-    ::-webkit-scrollbar-thumb {
-      background: var(--border-color);
-      border-radius: 4px;
-    }
+ ::-webkit-scrollbar-thumb {
+ background: var(--border-color);
+ border-radius: 4px;
+ }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--text-secondary);
-    }
-  </style>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const hamburger = document.querySelector('.hamburger');
-      const navMenu = document.querySelector('nav ul.main-nav');
-      const dropdownToggle = document.querySelector('.dropdown-toggle');
-      const dropdownMenu = document.querySelector('.dropdown-menu');
+ ::-webkit-scrollbar-thumb:hover {
+ background: var(--text-secondary);
+ }
+ </style>
+ <script>
+ document.addEventListener('DOMContentLoaded', () => {
+ const hamburger = document.querySelector('.hamburger');
+ const navMenu = document.querySelector('nav ul.main-nav');
+ const userDropdownToggle = document.querySelector('.user-dropdown-toggle');
+ const userDropdownMenu = document.querySelector('.user-dropdown-menu');
 
-      if (hamburger && navMenu) {
-        hamburger.addEventListener('click', () => {
-          navMenu.classList.toggle('active');
-        });
-      }
+ if (hamburger && navMenu) {
+ hamburger.addEventListener('click', () => {
+ navMenu.classList.toggle('active');
+ });
+ }
 
-      if (dropdownToggle && dropdownMenu) {
-        dropdownToggle.addEventListener('click', () => {
-          dropdownMenu.classList.toggle('active');
-        });
+ if (userDropdownToggle && userDropdownMenu) {
+ userDropdownToggle.addEventListener('click', () => {
+ userDropdownMenu.classList.toggle('active');
+ });
 
-        document.addEventListener('click', (e) => {
-          if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
-            dropdownMenu.classList.remove('active');
-          }
-        });
-      }
-    });
-  </script>
+ document.addEventListener('click', (e) => {
+ if (!userDropdownToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+ userDropdownMenu.classList.remove('active');
+ }
+ });
+ }
+ });
+ </script>
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="/" class="logo"><i class="fas fa-blog"></i> Blogify</a>
-      <button class="hamburger"><i class="fas fa-bars"></i></button>
-      <ul class="main-nav">
-        
-        <% if (user) { %>
-          <li><a href="/blog/addBlog"><i class="fas fa-plus"></i> Add Blog</a></li>
-        <% } else { %>
-          <li><a href="/user/signin"><i class="fas fa-sign-in-alt"></i> Sign In</a></li>
-          <li><a href="/user/signup"><i class="fas fa-user-plus"></i> Sign Up</a></li>
-        <% } %>
-      </ul>
-      <% if (user) { %>
-        <div class="dropdown">
-          <button class="dropdown-toggle">
-            <img src="<%= user.profileImageURL %>" alt="Profile" class="profile-avatar">
-            <%= user.fullname %>
-            <i class="fas fa-chevron-down"></i>
-          </button>
-          <div class="dropdown-menu">
-            <a href="/profile"><i class="fas fa-user"></i> Profile</a>
-            <a href="/notification"><i class="fas fa-bell"></i> Notifications</a>
-            <a href="/settings"><i class="fas fa-cog"></i> Settings</a>
-            <a href="/user/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
-          </div>
-        </div>
-      <% } %>
-      <form action="/search" method="GET">
-        <input type="text" name="q" placeholder="Search users or blogs..." aria-label="Search">
-        <button type="submit"><i class="fas fa-search"></i></button>
-      </form>
-    </nav>
-  </header>
+ <header>
+ <nav>
+ <a href="/" class="logo"><i class="fas fa-blog"></i> Blogify</a>
+ <button class="hamburger"><i class="fas fa-bars"></i></button>
+ <ul class="main-nav">
+ 
+ <% if (user) { %>
+ <li><a href="/blog/addBlog"><i class="fas fa-plus"></i> Add Blog</a></li>
+ <% } else { %>
+ <li><a href="/user/signin"><i class="fas fa-sign-in-alt"></i> Sign In</a></li>
+ <li><a href="/user/signup"><i class="fas fa-user-plus"></i> Sign Up</a></li>
+ <% } %>
+ </ul>
+ <% if (user) { %>
+ <div class="user-dropdown">
+ <button class="user-dropdown-toggle">
+ <img src="<%= user.profileImageURL %>" alt="Profile" class="profile-avatar">
+ <%= user.fullname %>
+ <i class="fas fa-chevron-down"></i>
+ </button>
+ <div class="user-dropdown-menu">
+ <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+ <a href="/notification"><i class="fas fa-bell"></i> Notifications</a>
+ <a href="/settings"><i class="fas fa-cog"></i> Settings</a>
+ <a href="/user/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+ </div>
+ </div>
+ <% } %>
+ <form action="/search" method="GET">
+ <input type="text" name="q" placeholder="Search users or blogs..." aria-label="Search">
+ <button type="submit"><i class="fas fa-search"></i></button>
+ </form>
+ </nav>
+ </header>
 </body>
 </html>
+``` 
