@@ -93,11 +93,24 @@
                 <% } %>
                 : <%= notification.message %>
               </p>
-              <% if (notification.blogId && notification.blogId._id) { %>
+              <% if (notification.blogId && (notification.type === 'LIKE' || notification.type === 'COMMENT')) { %>
+                <% if (notification.blogId.coverImage) { %>
+                  <img src="<%= notification.blogId.coverImage %>" alt="Blog Cover" style="
+                    width: 50px;
+                    height: 50px;
+                    object-fit: cover;
+                    border-radius: 4px;
+                    margin-right: 0.5rem;
+                    vertical-align: middle;
+                  ">
+                <% } %>
                 <a href="/blog/<%= notification.blogId._id %>" style="
                   color: #3498db;
                   text-decoration: none;
-                " onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><i class="fas fa-eye"></i> View Post</a>
+                " onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><i class="fas fa-eye"></i> <%= notification.blogId.title %></a>
+              <% } %>
+              <% if (notification.content && (notification.type === 'COMMENT' || notification.type === 'REPLY')) { %>
+                <p style="margin: 0.5rem 0; color: #bdc3c7;"><i class="fas fa-comment"></i> <%= notification.content %></p>
               <% } %>
               <p style="
                 font-size: 0.8rem;
@@ -132,7 +145,7 @@
                     <i class="fas fa-times"></i> Reject
                   </button>
                 </form>
-              <% } else if (notification.status !== 'READ') { %>
+              <% } else if (notification.status === 'UNREAD') { %>
                 <form action="/notification/read/<%= notification._id %>" method="POST" style="display: inline;">
                   <button type="submit" style="
                     padding: 0.5rem 1rem;
