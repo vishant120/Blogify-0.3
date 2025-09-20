@@ -1,3 +1,4 @@
+// routes/settings.js
 const { Router } = require("express");
 const { randomBytes, createHmac } = require("crypto");
 const User = require("../models/user");
@@ -60,6 +61,26 @@ router.post("/update-profile", cloudinaryUpload.single("profileImage"), async (r
   } catch (err) {
     console.error("Error updating profile:", err);
     return res.redirect("/settings?error_msg=Failed to update profile");
+  }
+});
+
+// POST /settings/update-privacy
+router.post("/update-privacy", async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json({ success: false, error: "Please log in" });
+    }
+
+    const { isPrivate } = req.body;
+    const updatedUser = await User.findByIdAndUpdate(req.user._id, { isPrivate: isPrivate === 'true' }, { new: true });
+    if (!updatedUser) return res.json({ success: false, error: "User not found" });
+
+    const token = createTokenForUser(updatedUser);
+    res.cookie("token", token, { httpOnly: true });
+    return res.json({ success: true, message: "Privacy settings updated" });
+  } catch (err) {
+    console.error("Error updating privacy:", err);
+    return res.json({ success: false, error: "Failed to update privacy settings" });
   }
 });
 
