@@ -81,8 +81,22 @@ app.get("/", async (req, res) => {
     const Comment = require("./models/comments");
     const Notification = require("./models/notification");
     const User = require("./models/user");
-    const allBlogs = await Blog.find()
-      .populate("createdBy", "fullname email profileImageURL followers")
+
+    let query = {};
+    if (req.user) {
+      query = {
+        $or: [
+          { 'createdBy.isPrivate': false },
+          { createdBy: req.user._id },
+          { $and: [{ 'createdBy.isPrivate': true }, { 'createdBy.followers': req.user._id }] }
+        ]
+      };
+    } else {
+      query = { 'createdBy.isPrivate': false };
+    }
+
+    const allBlogs = await Blog.find(query)
+      .populate("createdBy", "fullname email profileImageURL followers isPrivate")
       .populate("likes", "fullname profileImageURL")
       .sort({ createdAt: -1 });
 
@@ -182,12 +196,26 @@ app.get("/search", async (req, res) => {
         .populate("followers", "fullname profileImageURL")
         .sort({ fullname: 1 });
 
-      blogs = await Blog.find({
+      let blogQuery = {
         $or: [
           { title: { $regex: query, $options: "i" } },
           { body: { $regex: query, $options: "i" } },
         ],
-      })
+      };
+
+      if (req.user) {
+        blogQuery.$and = [{
+          $or: [
+            { 'createdBy.isPrivate': false },
+            { createdBy: req.user._id },
+            { $and: [{ 'createdBy.isPrivate': true }, { 'createdBy.followers': req.user._id }] }
+          ]
+        }];
+      } else {
+        blogQuery.$and = [{ 'createdBy.isPrivate': false }];
+      }
+
+      blogs = await Blog.find(blogQuery)
         .populate("createdBy", "fullname profileImageURL")
         .sort({ createdAt: -1 });
     }
