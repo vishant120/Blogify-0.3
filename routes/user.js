@@ -354,15 +354,34 @@ router.post("/follow/:id", async (req, res) => {
       return res.redirect(`/?error_msg=Follow request already sent`);
     }
 
-    await Notification.create({
-      recipient: userIdToFollow,
-      sender: currentUserId,
-      type: "FOLLOW_REQUEST",
-      message: `${req.user.fullname} wants to follow you`,
-      status: "PENDING",
-    });
+    if (!userToFollow.isPrivate) {
+      // Public account: directly follow
+      await Promise.all([
+        User.findByIdAndUpdate(currentUserId, { $addToSet: { following: userIdToFollow } }, { new: true }),
+        User.findByIdAndUpdate(userIdToFollow, { $addToSet: { followers: currentUserId } }, { new: true }),
+      ]);
 
-    return res.redirect(`/profile/${userIdToFollow}?success_msg=Follow request sent to ${userToFollow.fullname}`);
+      await Notification.create({
+        recipient: userIdToFollow,
+        sender: currentUserId,
+        type: "FOLLOW",
+        message: `${req.user.fullname} started following you`,
+        status: "ACCEPTED",
+      });
+
+      return res.redirect(`/profile/${userIdToFollow}?success_msg=Now following ${userToFollow.fullname}`);
+    } else {
+      // Private account: send request
+      await Notification.create({
+        recipient: userIdToFollow,
+        sender: currentUserId,
+        type: "FOLLOW_REQUEST",
+        message: `${req.user.fullname} wants to follow you`,
+        status: "PENDING",
+      });
+
+      return res.redirect(`/profile/${userIdToFollow}?success_msg=Follow request sent to ${userToFollow.fullname}`);
+    }
   } catch (error) {
     console.error("Error sending follow request:", error);
     return res.redirect(`/?error_msg=Failed to send follow request`);
