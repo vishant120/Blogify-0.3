@@ -1,3 +1,4 @@
+// models/user.js
 const { Schema, model, models } = require("mongoose");
 const { createHmac, randomBytes } = require("crypto");
 const { createTokenForUser } = require("../services/authentication");
@@ -50,6 +51,10 @@ const userSchema = new Schema(
     },
     resetPasswordExpires: {
       type: Date,
+    },
+    isPrivate: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
