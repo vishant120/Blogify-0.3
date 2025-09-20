@@ -78,19 +78,14 @@ router.get("/:id", async (req, res) => {
       return renderProfile(res, req.user, null, [], false, "follow", [], { error_msg: "User not found" });
     }
 
-    const isOwn = req.user ? profileUser._id.equals(req.user._id) : false;
+    const blogs = await Blog.find({ createdBy: req.params.id })
+      .populate("createdBy", "fullname profileImageURL")
+      .populate("likes", "fullname profileImageURL")
+      .sort({ createdAt: -1 });
+
     const isFollowing = req.user
       ? profileUser.followers.some((follower) => follower._id.equals(req.user._id))
       : false;
-
-    let blogs = [];
-    const canViewBlogs = !profileUser.isPrivate || isOwn || isFollowing;
-    if (canViewBlogs) {
-      blogs = await Blog.find({ createdBy: req.params.id })
-        .populate("createdBy", "fullname profileImageURL")
-        .populate("likes", "fullname profileImageURL")
-        .sort({ createdAt: -1 });
-    }
 
     let followStatus = "follow";
     let commonFollowers = [];
