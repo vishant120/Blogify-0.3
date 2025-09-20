@@ -204,7 +204,7 @@
       background: #c0392b;
     }
     /* 3-dots menu */
-    .blog-menu {
+    .blog-menu, .comment-menu {
       position: absolute;
       top: 10px;
       right: 10px;
@@ -346,6 +346,7 @@
       background: var(--hover-bg);
       border-radius: 8px;
       padding: 1rem 1.1rem;
+      position: relative;
     }
     .comment-block img, .like-block img {
       width: 42px;
@@ -480,11 +481,6 @@
       margin-top: 1rem;
       padding-left: 2rem;
       border-left: 2px solid var(--border-color);
-    }
-    .comment-menu {
-      position: absolute;
-      top: 5px;
-      right: 5px;
     }
   </style>
 </head>
@@ -669,19 +665,9 @@
                       <i class="fas fa-heart"></i>
                       <span class="like-count"><%= comment.likes.length %></span>
                     </button>
-                    <div class="comment-menu">
-                      <button class="dots-btn" onclick="toggleCommentMenu(event, '<%= comment._id %>')">
-                          <i class="fas fa-ellipsis-v"></i>
-                      </button>
-                      <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
-                        <button class="reply-btn"><i class="fas fa-reply"></i> Reply</button>
-                        <% if (user && comment.createdBy._id.toString() === user._id.toString()) { %>
-                          <form action="/comment/<%= comment._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to delete this comment?');" style="margin:0;">
-                            <button type="submit" class="delete-btn"><i class="fas fa-trash"></i> Delete Comment</button>
-                          </form>
-                        <% } %>
-                      </div>
-                    </div>
+                    <button class="comment-action-btn reply-btn" data-comment-id="<%= comment._id %>">
+                      <i class="fas fa-reply"></i> Reply
+                    </button>
                   <% } %>
                   <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
                 </div>
@@ -703,11 +689,31 @@
                             <% } %>
                           </div>
                         </div>
+                        <div class="comment-menu">
+                          <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')">
+                            <i class="fas fa-ellipsis-v"></i>
+                          </button>
+                          <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
+                            <% if (user && reply.createdBy._id.toString() === user._id.toString()) { %>
+                              <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
+                            <% } %>
+                          </div>
+                        </div>
                       </div>
                     <% }) %>
                   <% } %>
                 </div>
                 <div class="reply-form-container"></div>
+              </div>
+              <div class="comment-menu">
+                <button class="dots-btn" onclick="toggleCommentMenu('<%= comment._id %>')">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
+                  <% if (user && comment.createdBy._id.toString() === user._id.toString()) { %>
+                    <button class="delete-btn delete-comment-btn" data-comment-id="<%= comment._id %>"><i class="fas fa-trash"></i> Delete</button>
+                  <% } %>
+                </div>
               </div>
             </div>
           <% }) %>
@@ -746,13 +752,7 @@
       }
     }
 
-    function toggleCommentMenu(e, id) {
-      e.stopPropagation();
-      document.querySelectorAll('.dropdown-menu').forEach(menu => {
-        if (menu.id !== `comment-menu-${id}`) {
-          menu.classList.remove('active');
-        }
-      });
+    function toggleCommentMenu(id) {
       const menu = document.getElementById(`comment-menu-${id}`);
       if (menu) {
         menu.classList.toggle('active');
@@ -941,6 +941,56 @@
         });
       });
 
+      // Delete a comment or reply
+      document.querySelectorAll('.delete-comment-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to delete this?')) return;
+
+          const commentId = button.dataset.commentId;
+          const commentBlock = button.closest('.comment-block');
+          const isReply = commentBlock.parentElement.classList.contains('comment-replies');
+          const repliesContainer = commentBlock.querySelector('.comment-replies');
+          const replyCount = repliesContainer ? repliesContainer.querySelectorAll('.comment-block').length : 0;
+          const deletedCount = isReply ? 1 : 1 + replyCount;
+
+          try {
+            const response = await fetch(`/comment/${commentId}`, {
+              method: 'DELETE',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              commentBlock.remove();
+
+              // Update total comments count
+              const modal = button.closest('.modal');
+              const modalId = modal.id;
+              const blogId = modalId.split('-')[1];
+              const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+              const countSpan = blogCard.querySelector('.comments-count');
+              const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
+              let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
+              currentCount -= deletedCount;
+              countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
+
+              // Check if no comments left
+              const commentsList = modal.querySelector('.comments-list');
+              if (commentsList.querySelectorAll('.comment-block').length === 0) {
+                commentsList.innerHTML = '<div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>';
+              }
+            } else {
+              alert('Failed to delete');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+          }
+        });
+      });
+
       // Show Reply Form
       document.querySelectorAll('.reply-btn').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -990,10 +1040,29 @@
                           </button>
                         </div>
                       </div>
+                      <div class="comment-menu">
+                        <button class="dots-btn" onclick="toggleCommentMenu('${newReply._id}')">
+                          <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="dropdown-menu" id="comment-menu-${newReply._id}">
+                          <button class="delete-btn delete-comment-btn" data-comment-id="${newReply._id}"><i class="fas fa-trash"></i> Delete</button>
+                        </div>
+                      </div>
                     </div>
                   `;
                   repliesContainer.innerHTML += replyHtml;
                   form.remove(); // Remove the reply form after submission
+
+                  // Update total comments count
+                  const modal = form.closest('.modal');
+                  const modalId = modal.id;
+                  const blogId = modalId.split('-')[1];
+                  const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+                  const countSpan = blogCard.querySelector('.comments-count');
+                  const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
+                  let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
+                  currentCount += 1;
+                  countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
                 } else {
                   alert('Failed to post reply.');
                 }
@@ -1030,10 +1099,33 @@
                     <div class="comment-replies"></div>
                     <div class="reply-form-container"></div>
                   </div>
+                  <div class="comment-menu">
+                    <button class="dots-btn" onclick="toggleCommentMenu('${newComment._id}')">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu" id="comment-menu-${newComment._id}">
+                      <button class="delete-btn delete-comment-btn" data-comment-id="${newComment._id}"><i class="fas fa-trash"></i> Delete</button>
+                    </div>
+                  </div>
                 </div>
               `;
               commentsList.innerHTML += newCommentHtml;
               form.querySelector('textarea').value = '';
+
+              // Remove "No comments yet" if present
+              const noCommentsDiv = commentsList.querySelector('div[style*="color:#b2becd"]');
+              if (noCommentsDiv) noCommentsDiv.remove();
+
+              // Update total comments count
+              const modal = form.closest('.modal');
+              const modalId = modal.id;
+              const blogId = modalId.split('-')[1];
+              const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+              const countSpan = blogCard.querySelector('.comments-count');
+              const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
+              let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
+              currentCount += 1;
+              countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
             } else {
               alert('Failed to post comment.');
             }
@@ -1044,4 +1136,3 @@
   </script>
 </body>
 </html>
-
