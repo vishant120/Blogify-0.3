@@ -461,50 +461,36 @@
       text-decoration: underline;
     }
 
-    /* New styles for comments */
-    .comment-actions {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 0.5rem;
-      flex-wrap: wrap; /* Allow buttons to wrap on small screens */
-    }
-    .comment-action-btn {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      padding: 0; /* Remove default padding */
-    }
-    .comment-action-btn.liked {
-      color: var(--danger-color);
-    }
-    .comment-reply-form {
-      margin-top: 1rem;
-      background: var(--card-bg);
-      padding: 1rem;
-      border-radius: 8px;
-    }
-    .comment-replies {
-      margin-top: 1rem;
-      padding-left: 2rem;
-      border-left: 2px solid var(--border-color);
-      /* --- New styles for collapsible replies --- */
-      display: none;
-    }
-    .comment-replies.visible {
-      display: block;
-    }
-    .toggle-replies-btn i {
-      transition: transform 0.3s ease;
-    }
-    .toggle-replies-btn.open i {
-      transform: rotate(180deg);
-    }
-    /* --- End of new styles --- */
+/* New styles for comments */
+.comment-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+.comment-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.comment-action-btn.liked {
+  color: var(--danger-color);
+}
+.comment-reply-form {
+  margin-top: 1rem;
+  background: var(--card-bg);
+  padding: 1rem;
+  border-radius: 8px;
+}
+.comment-replies {
+  margin-top: 1rem;
+  padding-left: 2rem;
+  border-left: 2px solid var(--border-color);
+}
   </style>
 </head>
 <body>
@@ -693,42 +679,41 @@
                     </button>
                   <% } %>
                   <% if (comment.replies && comment.replies.length > 0) { %>
-                    <button class="comment-action-btn toggle-replies-btn" data-comment-id="<%= comment._id %>">
-                      <i class="fas fa-chevron-down"></i>&nbsp;
-                      <span class="toggle-text">Show <%= comment.replies.length %> Replies</span>
-                    </button>
-                  <% } %>
-                </div>
-                <div class="comment-replies">
-                  <% if (comment.replies && comment.replies.length > 0) { %>
-                    <% comment.replies.forEach(reply => { %>
-                      <div class="comment-block" data-comment-id="<%= reply._id %>">
-                        <img src="<%= reply.createdBy.profileImageURL %>" alt="Profile Image">
-                        <div class="comment-content">
-                          <div class="comment-author"><a href="/profile/<%= reply.createdBy._id %>" style="color:var(--primary-color);text-decoration:none;"><%= reply.createdBy.fullname %></a></div>
-                          <div class="comment-text"><%= reply.content %></div>
-                          <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(reply.createdAt).fromNow() %></div>
-                          <div class="comment-actions">
-                            <% if (user) { %>
-                              <button class="comment-action-btn like-comment-btn <%= reply.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= reply._id %>">
-                                <i class="fas fa-heart"></i>
-                                <span class="like-count"><%= reply.likes.length %></span>
+                    <div class="reply-menu" style="position: relative;">
+                      <button class="comment-action-btn view-replies-btn" onclick="toggleReplyMenu('<%= comment._id %>')">
+                        <i class="fas fa-reply-all"></i> View <%= comment.replies.length %> replies
+                      </button>
+                      <div class="dropdown-menu" id="reply-menu-<%= comment._id %>" style="width: 320px; max-height: 300px; overflow-y: auto;">
+                        <% comment.replies.forEach(reply => { %>
+                          <div style="display: flex; gap: 0.5rem; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-color); position: relative;">
+                            <img src="<%= reply.createdBy.profileImageURL %>" alt="Profile Image" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                            <div style="flex: 1;">
+                              <div class="comment-author" style="font-size: 0.95rem;"><a href="/profile/<%= reply.createdBy._id %>" style="color:var(--primary-color);text-decoration:none;"><%= reply.createdBy.fullname %></a></div>
+                              <div class="comment-text" style="font-size: 0.95rem; color: var(--text-secondary); word-break: break-word;"><%= reply.content %></div>
+                              <div class="comment-time" style="font-size: 0.8rem; color: var(--text-secondary);"><i class="fas fa-clock"></i> <%= moment(reply.createdAt).fromNow() %></div>
+                              <div class="comment-actions" style="margin-top: 0.2rem;">
+                                <% if (user) { %>
+                                  <button class="comment-action-btn like-comment-btn <%= reply.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= reply._id %>" style="font-size: 0.8rem; padding: 0;">
+                                    <i class="fas fa-heart"></i>
+                                    <span class="like-count"><%= reply.likes.length %></span>
+                                  </button>
+                                <% } %>
+                              </div>
+                            </div>
+                            <div class="comment-menu" style="position: absolute; top: 5px; right: 5px;">
+                              <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')" style="font-size: 1.2rem; padding: 0.1rem 0.3rem;">
+                                <i class="fas fa-ellipsis-v"></i>
                               </button>
-                            <% } %>
+                              <div class="dropdown-menu" id="comment-menu-<%= reply._id %>" style="top: 20px; right: 0; min-width: 120px;">
+                                <% if (user && reply.createdBy._id.toString() === user._id.toString()) { %>
+                                  <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>" style="font-size: 0.95rem;"><i class="fas fa-trash"></i> Delete</button>
+                                <% } %>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div class="comment-menu">
-                          <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')">
-                            <i class="fas fa-ellipsis-v"></i>
-                          </button>
-                          <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
-                            <% if (user && reply.createdBy._id.toString() === user._id.toString()) { %>
-                              <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
-                            <% } %>
-                          </div>
-                        </div>
+                        <% }) %>
                       </div>
-                    <% }) %>
+                    </div>
                   <% } %>
                 </div>
                 <div class="reply-form-container"></div>
@@ -782,6 +767,13 @@
 
     function toggleCommentMenu(id) {
       const menu = document.getElementById(`comment-menu-${id}`);
+      if (menu) {
+        menu.classList.toggle('active');
+      }
+    }
+
+    function toggleReplyMenu(id) {
+      const menu = document.getElementById(`reply-menu-${id}`);
       if (menu) {
         menu.classList.toggle('active');
       }
@@ -844,7 +836,7 @@
     }
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.blog-menu') && !e.target.closest('.comment-menu')) {
+      if (!e.target.closest('.blog-menu') && !e.target.closest('.comment-menu') && !e.target.closest('.reply-menu')) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('active'));
       }
       if (e.target === document.getElementById('shareModal')) {
@@ -913,32 +905,12 @@
               const finalStatus = data.newStatus;
               
               btn.dataset.followStatus = finalStatus;
-
-              // --- ADDED: Event listener for reply visibility toggle ---
-              document.querySelectorAll('.toggle-replies-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const commentBlock = button.closest('.comment-block');
-                    if (commentBlock) {
-                        const repliesContainer = commentBlock.querySelector('.comment-replies');
-                        const toggleText = button.querySelector('.toggle-text');
-                        
-                        // Toggle visibility and button state
-                        button.classList.toggle('open');
-                        repliesContainer.classList.toggle('visible');
-
-                        // Update button text
-                        const replyCount = repliesContainer.querySelectorAll('.comment-block').length;
-                        if (repliesContainer.classList.contains('visible')) {
-                            toggleText.textContent = `Hide ${replyCount} Replies`;
-                        } else {
-                            toggleText.textContent = `Show ${replyCount} Replies`;
-                        }
-                    }
-                });
-              });
+            } else {
+              alert('Action failed. Please try again.');
             }
-          } catch(err) {
-            console.error(err);
+          } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
           }
         });
       });
