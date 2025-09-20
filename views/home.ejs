@@ -133,13 +133,13 @@
     .dropdown-menu button:hover, .dropdown-menu a:hover { background: var(--hover-bg); }
     .dropdown-menu .delete-btn { color: var(--danger-color); }
     #modalOverlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 8000;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 8000;
       opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none;
     }
     #modalOverlay.active { opacity: 1; pointer-events: auto; }
     .modal {
-      display: none; position: fixed; top: 50%; left: 50%; width: 90vw; max-width: 500px;
-      height: auto; max-height: 80vh; overflow-y: auto; background: var(--card-bg); z-index: 9000;
+      display: none; position: fixed; top: 50%; left: 50%; width: 90vw; max-width: 600px;
+      height: auto; max-height: 80vh; overflow-y: auto; background: #000; z-index: 9000;
       box-shadow: 0 8px 32px rgba(0,0,0,0.25); border-radius: 1.1rem; padding: 2.2rem 1.7rem 1.5rem;
       transform: translate(-50%, -45%); opacity: 0;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
@@ -187,6 +187,34 @@
       border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
     }
     .share-btn:hover { background: var(--primary-color); }
+    #commentsModal .new-comment-form {
+      display: flex; gap: 0.5rem; margin-bottom: 1rem;
+    }
+    #commentsModal .new-comment-form textarea {
+      flex: 1; padding: 0.75rem; border: 1px solid var(--border-color);
+      border-radius: 8px; background: var(--hover-bg); color: var(--text-primary);
+      resize: vertical; min-height: 40px;
+    }
+    #commentsModal .new-comment-form button {
+      padding: 0.5rem 1rem; border: none; border-radius: 8px;
+      background: var(--primary-color); color: var(--text-primary);
+      cursor: pointer;
+    }
+    #commentsModal .comment-replies {
+      padding-left: 2rem; border-left: 2px solid var(--border-color);
+      margin-top: 1rem;
+    }
+    #commentsModal .reply-form {
+      display: none; margin-top: 0.5rem;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    #commentsModal .reply-form.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     @media (max-width: 600px) {
       .modal { width: 95vw; padding: 1.5rem 1rem 1rem; }
     }
@@ -252,18 +280,34 @@
       likes: blog.likes.map(like => ({
         _id: like._id,
         fullname: like.fullname,
-        profileImageURL: like.profileImageURL
+        profileImageURL: like.profileImageURL,
+        followStatus: like.followStatus
       })),
       comments: blog.comments.map(comment => ({
+        _id: comment._id,
         user: {
           _id: comment.createdBy._id,
           fullname: comment.createdBy.fullname,
           profileImageURL: comment.createdBy.profileImageURL
         },
         content: comment.content,
-        createdAt: comment.createdAt
+        createdAt: comment.createdAt,
+        likes: comment.likes.map(l => l._id),
+        replies: comment.replies.map(r => ({
+          _id: r._id,
+          user: {
+            _id: r.createdBy._id,
+            fullname: r.createdBy.fullname,
+            profileImageURL: r.createdBy.profileImageURL
+          },
+          content: r.content,
+          createdAt: r.createdAt,
+          likes: r.likes.map(l => l._id),
+        }))
       }))
     }))) %>;
+    const currentUser = <%- JSON.stringify(user || null) %>;
+    const currentFollowerIds = <%- JSON.stringify(currentFollowerIds) %>;
   </script>
 
   <div id="modalOverlay"></div>
@@ -278,7 +322,9 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const modalOverlay = document.getElementById('modalOverlay');
+      let currentBlogId = '';
       let currentBlogUrl = '';
+      const userIsLoggedIn = !!currentUser;
 
       // --- Generic Modal Controls ---
       function openModal(m) {
@@ -299,6 +345,46 @@
       
       modalOverlay.addEventListener('click', closeModal);
 
+      // --- Follow Button Handler ---
+      window.handleFollow = async (userIdToFollow, followStatus) => {
+        if (!userIsLoggedIn) {
+          return alert("Please sign in to follow users.");
+        }
+        
+        let endpoint = '';
+        switch(followStatus) {
+            case 'follow':
+                endpoint = `/user/follow/${userIdToFollow}`;
+                break;
+            case 'following':
+                endpoint = `/user/unfollow/${userIdToFollow}`;
+                break;
+            case 'requested':
+                endpoint = `/user/cancel-follow/${userIdToFollow}`;
+                break;
+            default:
+                return;
+        }
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            if (response.ok) {
+                window.location.reload(); // Simple reload for state consistency
+            } else {
+                alert("Failed to update follow status.");
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert("An error occurred. Please try again.");
+        }
+      };
+
       // --- Specific Modal Triggers & Data Fetching ---
       window.showLikes = (blogId) => {
         const modal = document.getElementById('likesModal-' + blogId);
@@ -309,14 +395,35 @@
         
         let likesHtml = '<h3><i class="fas fa-heart"></i> Likes</h3>';
         if (likes.length > 0) {
-          likesHtml += likes.map(like => `
-            <div class="like-block">
-              <img src="${like.profileImageURL}" alt="${like.fullname}'s profile picture" />
-              <div class="like-content">
-                <div class="like-author"><a href="/profile/${like._id}">${like.fullname}</a></div>
+          likesHtml += likes.map(like => {
+            let btnClass = 'follow-btn';
+            let btnText = 'Follow';
+            if (like.followStatus === 'following') {
+                btnClass += ' following';
+                btnText = 'Following';
+            } else if (like.followStatus === 'requested') {
+                btnClass += ' requested';
+                btnText = 'Requested';
+            } else if (like.followStatus === 'own') {
+                btnClass += ' own';
+                btnText = 'You';
+            }
+
+            const followBtn = like.followStatus !== 'own' ? 
+                `<button class="${btnClass}" onclick="handleFollow('${like._id}', '${like.followStatus}')">
+                    <i class="fas fa-user-plus"></i> ${btnText}
+                </button>` : '';
+
+            return `
+              <div class="like-block">
+                <img src="${like.profileImageURL}" alt="${like.fullname}'s profile picture" />
+                <div class="like-content">
+                  <div class="like-author"><a href="/profile/${like._id}">${like.fullname}</a></div>
+                  ${followBtn}
+                </div>
               </div>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         } else {
           likesHtml += '<p style="text-align:center; color:var(--text-secondary);">No one has liked this blog yet.</p>';
         }
@@ -326,31 +433,206 @@
       };
 
       window.showComments = (blogId) => {
+        currentBlogId = blogId;
         const modal = document.getElementById('commentsModal-' + blogId);
         const blog = blogsData.find(b => b._id === blogId);
         if (!blog || !modal) return;
 
         const comments = blog.comments;
 
-        let commentsHtml = '<h3><i class="fas fa-comments"></i> Comments</h3>';
+        let commentsHtml = `
+          <h3><i class="fas fa-comments"></i> Comments</h3>
+          ${userIsLoggedIn ? `
+            <form id="newCommentForm" class="new-comment-form">
+              <textarea name="content" placeholder="Add a comment..." required></textarea>
+              <button type="submit">Post</button>
+            </form>
+          ` : '<p style="text-align:center; color:var(--text-secondary);">Please <a href="/user/signin" style="color:var(--primary-color);">sign in</a> to comment.</p>'}
+        `;
+
         if (comments.length > 0) {
-          commentsHtml += comments.map(comment => `
+          commentsHtml += generateCommentsHtml(comments);
+        } else {
+          commentsHtml += '<p style="text-align:center; color:var(--text-secondary;">No comments yet. Be the first to comment!</p>';
+        }
+
+        modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${commentsHtml}`;
+        openModal(modal);
+        if (userIsLoggedIn) {
+          document.getElementById('newCommentForm').addEventListener('submit', handleNewComment);
+        }
+      };
+
+      function generateCommentsHtml(comments, isReply = false) {
+        let html = '';
+        comments.forEach(comment => {
+          const isLiked = userIsLoggedIn && comment.likes.includes(currentUser._id);
+          const likeBtnClass = `comment-action-btn ${isLiked ? 'liked' : ''}`;
+          const likeBtnText = isLiked ? 'Unlike' : 'Like';
+
+          html += `
             <div class="comment-block">
               <img src="${comment.user.profileImageURL}" alt="${comment.user.fullname}'s profile picture" />
               <div class="comment-content">
                 <div class="comment-author"><a href="/profile/${comment.user._id}">${comment.user.fullname}</a></div>
                 <div class="comment-text">${comment.content}</div>
                 <div class="comment-time"><i class="fas fa-clock"></i> ${moment(comment.createdAt).fromNow()}</div>
+                ${userIsLoggedIn ? `
+                <div class="comment-actions">
+                  <button class="${likeBtnClass}" onclick="handleCommentLike('${comment._id}')">
+                    <i class="fas fa-heart"></i> <span class="like-count">${comment.likes.length}</span> ${likeBtnText}
+                  </button>
+                  <button class="comment-action-btn" onclick="toggleReplyForm(this, '${comment._id}')">
+                    <i class="fas fa-reply"></i> Reply
+                  </button>
+                </div>
+                ` : ''}
+                <form class="reply-form" id="replyForm-${comment._id}" onsubmit="handleReply(event, '${comment._id}')">
+                    <textarea name="content" placeholder="Reply to this comment..." required></textarea>
+                    <button type="submit">Reply</button>
+                </form>
+                ${comment.replies && comment.replies.length > 0 ? `
+                  <div class="comment-replies">
+                    ${generateCommentsHtml(comment.replies, true)}
+                  </div>
+                ` : ''}
               </div>
             </div>
-          `).join('');
-        } else {
-          commentsHtml += '<p style="text-align:center; color:var(--text-secondary);">No comments yet. Be the first to comment!</p>';
-        }
+          `;
+        });
+        return html;
+      }
 
-        modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${commentsHtml}`;
-        openModal(modal);
+      window.handleNewComment = async (event) => {
+        event.preventDefault();
+        const form = event.target;
+        const content = form.content.value.trim();
+        if (!content) return;
+        
+        try {
+          const response = await fetch(`/comment/${currentBlogId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ content })
+          });
+          const data = await response.json();
+          if (data.success) {
+            const comment = data.newComment;
+            comment.user = comment.createdBy;
+            comment.replies = [];
+            const blog = blogsData.find(b => b._id === currentBlogId);
+            if(blog) {
+              blog.comments.unshift(comment);
+              document.getElementById('commentsModal-' + currentBlogId).innerHTML = `
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+                <h3><i class="fas fa-comments"></i> Comments</h3>
+                <form id="newCommentForm" class="new-comment-form">
+                    <textarea name="content" placeholder="Add a comment..." required></textarea>
+                    <button type="submit">Post</button>
+                </form>
+                ${generateCommentsHtml(blog.comments)}
+              `;
+              document.getElementById('newCommentForm').addEventListener('submit', handleNewComment);
+              form.content.value = '';
+            }
+          } else {
+            alert(data.error);
+          }
+        } catch (error) {
+          alert("Failed to post comment.");
+        }
       };
+
+      window.handleReply = async (event, parentId) => {
+        event.preventDefault();
+        const form = event.target;
+        const content = form.content.value.trim();
+        if (!content) return;
+        
+        try {
+          const response = await fetch(`/comment/reply/${parentId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ content })
+          });
+          const data = await response.json();
+          if (data.success) {
+            const reply = data.newReply;
+            reply.user = reply.createdBy;
+            const blog = blogsData.find(b => b._id === currentBlogId);
+            const parentComment = blog.comments.find(c => c._id === parentId);
+            if(parentComment) {
+              if(!parentComment.replies) parentComment.replies = [];
+              parentComment.replies.unshift(reply);
+              document.getElementById('commentsModal-' + currentBlogId).innerHTML = `
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+                <h3><i class="fas fa-comments"></i> Comments</h3>
+                <form id="newCommentForm" class="new-comment-form">
+                    <textarea name="content" placeholder="Add a comment..." required></textarea>
+                    <button type="submit">Post</button>
+                </form>
+                ${generateCommentsHtml(blog.comments)}
+              `;
+              document.getElementById('newCommentForm').addEventListener('submit', handleNewComment);
+            }
+          } else {
+            alert(data.error);
+          }
+        } catch (error) {
+          alert("Failed to post reply.");
+        }
+      };
+
+      window.handleCommentLike = async (commentId) => {
+        const commentButton = document.querySelector(`.comment-actions button[onclick*="${commentId}"]`);
+        const isLiked = commentButton.classList.contains('liked');
+        const method = isLiked ? 'DELETE' : 'POST';
+        
+        try {
+          const response = await fetch(`/comment/${commentId}/like`, {
+            method: method,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          });
+          const data = await response.json();
+          if (data.success) {
+            const blog = blogsData.find(b => b._id === currentBlogId);
+            const comment = findComment(blog.comments, commentId);
+            if (comment) {
+              const currentUserId = currentUser._id;
+              if (isLiked) {
+                comment.likes = comment.likes.filter(id => id !== currentUserId);
+              } else {
+                comment.likes.push(currentUserId);
+              }
+            }
+            document.getElementById('commentsModal-' + currentBlogId).innerHTML = `
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+                <h3><i class="fas fa-comments"></i> Comments</h3>
+                <form id="newCommentForm" class="new-comment-form">
+                    <textarea name="content" placeholder="Add a comment..." required></textarea>
+                    <button type="submit">Post</button>
+                </form>
+                ${generateCommentsHtml(blog.comments)}
+              `;
+              document.getElementById('newCommentForm').addEventListener('submit', handleNewComment);
+          } else {
+            alert(data.error);
+          }
+        } catch (error) {
+          alert("Failed to update like status.");
+        }
+      };
+
+      function findComment(comments, commentId) {
+        for(const comment of comments) {
+          if(comment._id === commentId) return comment;
+          if(comment.replies) {
+            const reply = findComment(comment.replies, commentId);
+            if(reply) return reply;
+          }
+        }
+        return null;
+      }
       
       window.openShare = (blogId) => {
         currentBlogUrl = `${window.location.origin}/blog/${blogId}`;
@@ -364,6 +646,16 @@
           alert('Failed to copy link.');
         });
       }
+
+      window.toggleReplyForm = (btn, commentId) => {
+        const form = document.getElementById(`replyForm-${commentId}`);
+        document.querySelectorAll('.reply-form.active').forEach(f => {
+            if (f.id !== form.id) {
+                f.classList.remove('active');
+            }
+        });
+        form.classList.toggle('active');
+      };
 
       // --- Dropdown Menu Toggle ---
       window.toggleMenu = (event, blogId) => {
