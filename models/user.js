@@ -1,4 +1,4 @@
-// models/user.js
+// models/user.js (updated with isPrivate)
 const { Schema, model, models } = require("mongoose");
 const { createHmac, randomBytes } = require("crypto");
 const { createTokenForUser } = require("../services/authentication");
