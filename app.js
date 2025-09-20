@@ -47,6 +47,12 @@ mongoose
     process.exit(1);
   });
 
+// Middleware to detect XHR
+app.use((req, res, next) => {
+  req.isXhr = req.headers['x-requested-with'] === 'XMLHttpRequest';
+  next();
+});
+
 // Middleware
 app.use(methodOverride("_method"));
 app.use(express.urlencoded({ extended: false }));
@@ -80,18 +86,33 @@ app.get("/", async (req, res) => {
       .populate("likes", "fullname profileImageURL")
       .sort({ createdAt: -1 });
 
+    const currentUser = req.user ? await User.findById(req.user._id) : null;
+
     let currentFollowerIds = [];
     if (req.user) {
-      const currentUser = await User.findById(req.user._id).select("followers");
-      currentFollowerIds = currentUser.followers.map(id => id.toString());
+      const currentUserFollowers = await User.findById(req.user._id).select("followers");
+      currentFollowerIds = currentUserFollowers.followers.map(id => id.toString());
     }
 
     const blogsWithComments = await Promise.all(
       allBlogs.map(async (blog) => {
-        const comments = await Comment.find({ blogId: blog._id })
+        const comments = await Comment.find({ blogId: blog._id, parent: null })
           .populate("createdBy", "fullname profileImageURL")
           .populate("likes", "fullname profileImageURL")
           .sort({ createdAt: -1 });
+
+        const replyIds = comments.map(c => c._id);
+        const replies = await Comment.find({ parent: { $in: replyIds } })
+          .populate("createdBy", "fullname profileImageURL")
+          .populate("likes", "fullname profileImageURL")
+          .sort({ createdAt: -1 });
+
+        comments.forEach(comment => {
+          comment.replies = replies.filter(r => r.parent.toString() === comment._id.toString());
+        });
+
+        const totalComments = comments.length + replies.length;
+
         const isFollowing = req.user
           ? blog.createdBy.followers.some((follower) => follower._id.equals(req.user._id))
           : false;
@@ -105,7 +126,26 @@ app.get("/", async (req, res) => {
             })
           : null;
         const followStatus = isFollowing ? "following" : pendingRequest ? "requested" : "follow";
-        return { ...blog._doc, comments, isFollowing, isOwn, followStatus, likes: blog.likes };
+
+        let likesWithStatus = blog.likes;
+        if (currentUser) {
+          likesWithStatus = await Promise.all(blog.likes.map(async (liker) => {
+            if (liker._id.equals(currentUser._id)) {
+              return { ...liker._doc, followStatus: "own" };
+            }
+            const isFollowingLiker = currentUser.following.some(f => f.equals(liker._id));
+            const pendingRequestLiker = await Notification.findOne({
+              sender: currentUser._id,
+              recipient: liker._id,
+              type: "FOLLOW_REQUEST",
+              status: "PENDING",
+            });
+            const followStatusLiker = isFollowingLiker ? "following" : pendingRequestLiker ? "requested" : "follow";
+            return { ...liker._doc, followStatus: followStatusLiker };
+          }));
+        }
+
+        return { ...blog._doc, comments, totalComments, isFollowing, isOwn, followStatus, likes: likesWithStatus };
       })
     );
 
