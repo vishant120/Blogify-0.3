@@ -359,6 +359,7 @@ router.post("/follow/:id", async (req, res) => {
       sender: currentUserId,
       type: "FOLLOW_REQUEST",
       message: `${req.user.fullname} wants to follow you`,
+      status: "PENDING",
     });
 
     return res.redirect(`/profile/${userIdToFollow}?success_msg=Follow request sent to ${userToFollow.fullname}`);
