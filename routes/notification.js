@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
 
     const notifications = await Notification.find({ recipient: req.user._id })
       .populate("sender", "fullname profileImageURL")
-      .populate("blogId", "title")
+      .populate("blogId", "title coverImage")
       .sort({ createdAt: -1 });
 
     renderNotifications(res, req.user, notifications, {
@@ -99,6 +99,10 @@ router.post("/read/:id", async (req, res) => {
     const notification = await Notification.findById(req.params.id);
     if (!notification || notification.recipient.toString() !== req.user._id.toString()) {
       return res.redirect("/notification?error_msg=Notification not found or unauthorized");
+    }
+
+    if (notification.type === "FOLLOW_REQUEST") {
+      return res.redirect("/notification?error_msg=Cannot mark follow request as read");
     }
 
     await Notification.findByIdAndUpdate(req.params.id, { status: "READ" }, { new: true });
