@@ -1,4 +1,4 @@
-<!-- views/settings.ejs -->
+<!-- views/settings.ejs (updated with privacy option)
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -203,12 +203,30 @@
       </form>
     </div>
 
-    <!-- Privacy/Security Popup -->
+    <!-- Privacy/Security Popup (updated) -->
     <div class="popup privacy-security-popup">
       <h3 style="color: #ecf0f1; margin-bottom: 1rem;">Privacy/Security</h3>
       <button class="close-btn close-privacy-security" aria-label="Close Privacy/Security Popup">
         <i class="fas fa-times"></i>
       </button>
+      <p id="privacy-message" class="message" aria-live="polite"></p>
+      <form id="privacy-form" style="
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      ">
+        <p style="color: #ecf0f1;">Account Privacy:</p>
+        <label>
+          <input type="radio" name="privacy" value="public" <%= !user.isPrivate ? 'checked' : '' %>> Public
+        </label>
+        <label>
+          <input type="radio" name="privacy" value="private" <%= user.isPrivate ? 'checked' : '' %>> Private
+        </label>
+        <button type="submit" id="privacy-submit">
+          <i class="fas fa-save"></i> Update Privacy
+        </button>
+      </form>
+      <hr style="margin: 1rem 0;">
       <p id="password-message" class="message" aria-live="polite"></p>
       <form id="password-form" style="
         display: flex;
@@ -218,23 +236,6 @@
         <p style="color: #ecf0f1;">Click below to receive a password reset link via email.</p>
         <button type="submit" id="password-submit">
           <i class="fas fa-paper-plane"></i> Send Password Reset Link
-        </button>
-      </form>
-      <hr style="margin: 1rem 0;">
-      <form id="privacy-form" style="
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      ">
-        <p style="color: #ecf0f1;">Account Privacy:</p>
-        <label>
-          <input type="radio" name="isPrivate" value="false" <%= !user.isPrivate ? 'checked' : '' %>> Public
-        </label>
-        <label>
-          <input type="radio" name="isPrivate" value="true" <%= user.isPrivate ? 'checked' : '' %>> Private
-        </label>
-        <button type="submit" id="privacy-submit">
-          <i class="fas fa-save"></i> Update Privacy
         </button>
       </form>
     </div>
@@ -272,191 +273,182 @@
       const privacySecurityPopup = document.querySelector('.privacy-security-popup');
       const deleteAccountPopup = document.querySelector('.delete-account-popup');
       const closeUpdateProfile = document.querySelector('.close-update-profile');
-      const closePrivacySecurity = document.querySelector('.close The user's message is: "Do update  I want add fecher  account  public / private 
+      const closePrivacySecurity = document.querySelector('.close-privacy-security');
+      const closeDeleteAccount = document.querySelector('.close-delete-account');
+      const overlay = document.querySelector('.popup-overlay');
+      const passwordForm = document.querySelector('#password-form');
+      const passwordMessage = document.querySelector('#password-message');
+      const passwordSubmit = document.querySelector('#password-submit');
+      const privacyForm = document.querySelector('#privacy-form');
+      const privacyMessage = document.querySelector('#privacy-message');
+      const privacySubmit = document.querySelector('#privacy-submit');
+      const deleteAccountForm = document.querySelector('#delete-account-form');
+      const deleteMessage = document.querySelector('#delete-message');
+      const deleteSubmit = document.querySelector('#delete-submit');
 
-How Fechers  work  
+      const showPopup = (popup) => {
+        if (popup) {
+          popup.style.display = 'block';
+          overlay.style.display = 'block';
+          const focusableEls = popup.querySelectorAll('a, button, input, textarea');
+          if (focusableEls.length > 0) focusableEls[0].focus();
+        }
+      };
 
-1{
-If user1 account  is public  allow  all can see user1 posted  blogs 
+      const hidePopup = (popup) => {
+        if (popup) popup.style.display = 'none';
+        overlay.style.display = 'none';
+      };
 
-If user1 account  is private  only  allow  user1 followers  to see user1 posted  blogs
+      const showMessage = (element, message, type) => {
+        element.textContent = message;
+        element.className = `message ${type}`;
+        element.style.display = 'block';
+      };
 
-Add this  account  public or private  options in settings.ejs Privacy/Security Popup  section 
-}
-2 and for follow button  if user account  public  
+      const setLoading = (button, isLoading) => {
+        button.disabled = isLoading;
+        button.style.opacity = isLoading ? '0.7' : '1';
+        button.innerHTML = isLoading
+          ? '<i class="fas fa-spinner fa-spin"></i> Processing...'
+          : button.classList.contains('delete-btn')
+          ? '<i class="fas fa-trash-alt"></i> Delete Account'
+          : button.id === 'password-submit'
+          ? '<i class="fas fa-paper-plane"></i> Send Password Reset Link'
+          : '<i class="fas fa-save"></i> Update Privacy';
+      };
 
-Than if user1 send Follow request to user2 no need to user accept  follow  request  it will directly  follow  accept  and show following 
+      // Update Profile Popup
+      if (updateProfileBtn && updateProfilePopup) {
+        updateProfileBtn.addEventListener('click', () => showPopup(updateProfilePopup));
+      }
+      if (closeUpdateProfile && updateProfilePopup) {
+        closeUpdateProfile.addEventListener('click', () => hidePopup(updateProfilePopup));
+      }
 
-3 users can like  and comment  on blog in profile.ejs  page 
+      // Privacy/Security Popup
+      if (privacySecurityBtn && privacySecurityPopup) {
+        privacySecurityBtn.addEventListener('click', () => {
+          passwordForm.style.display = 'flex';
+          passwordMessage.style.display = 'none';
+          privacyMessage.style.display = 'none';
+          showPopup(privacySecurityPopup);
+        });
+      }
+      if (closePrivacySecurity && privacySecurityPopup) {
+        closePrivacySecurity.addEventListener('click', () => hidePopup(privacySecurityPopup));
+      }
 
-"
+      // Delete Account Popup
+      if (deleteAccountBtn && deleteAccountPopup) {
+        deleteAccountBtn.addEventListener('click', () => {
+          deleteAccountForm.style.display = 'flex';
+          deleteMessage.style.display = 'none';
+          showPopup(deleteAccountPopup);
+        });
+      }
+      if (closeDeleteAccount && deleteAccountPopup) {
+        closeDeleteAccount.addEventListener('click', () => hidePopup(deleteAccountPopup));
+      }
 
-Followed by a bunch of code files.
+      // Overlay and Escape Key Handling
+      overlay.addEventListener('click', () => {
+        hidePopup(updateProfilePopup);
+        hidePopup(privacySecurityPopup);
+        hidePopup(deleteAccountPopup);
+      });
 
-It seems like the user wants to update their Node.js/Express app to add a feature for account privacy: public or private.
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          hidePopup(updateProfilePopup);
+          hidePopup(privacySecurityPopup);
+          hidePopup(deleteAccountPopup);
+        }
+      });
 
-Key points:
+      // Password Reset Form Submission
+      if (passwordForm) {
+        passwordForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          setLoading(passwordSubmit, true);
+          try {
+            const response = await fetch('/settings/request-password-reset', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({}),
+            });
+            const data = await response.json();
+            setLoading(passwordSubmit, false);
+            if (data.success) {
+              showMessage(passwordMessage, 'Password reset link sent to your email', 'success');
+              setTimeout(() => hidePopup(privacySecurityPopup), 2000);
+            } else {
+              showMessage(passwordMessage, data.error || 'Error sending password reset link', 'error');
+            }
+          } catch (err) {
+            setLoading(passwordSubmit, false);
+            showMessage(passwordMessage, 'Error sending password reset link', 'error');
+          }
+        });
+      }
 
-1. If account is public, anyone can see the user's blogs.
+      // Privacy Form Submission
+      if (privacyForm) {
+        privacyForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          setLoading(privacySubmit, true);
+          const isPrivate = privacyForm.querySelector('input[name="privacy"]:checked').value === 'private';
+          try {
+            const response = await fetch('/settings/update-privacy', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ isPrivate }),
+            });
+            const data = await response.json();
+            setLoading(privacySubmit, false);
+            if (data.success) {
+              showMessage(privacyMessage, 'Privacy settings updated', 'success');
+              setTimeout(() => location.reload(), 2000);
+            } else {
+              showMessage(privacyMessage, data.error || 'Error updating privacy', 'error');
+            }
+          } catch (err) {
+            setLoading(privacySubmit, false);
+            showMessage(privacyMessage, 'Error updating privacy', 'error');
+          }
+        });
+      }
 
-If private, only followers can see them.
+      // Delete Account Form Submission
+      if (deleteAccountForm) {
+        deleteAccountForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          setLoading(deleteSubmit, true);
+          const password = document.querySelector('#delete-password').value;
 
-Add option in settings.ejs under Privacy/Security popup.
-
-2. For follow button: If the target user's account is public, follow request is auto-accepted.
-
-If private, need approval.
-
-3. Users can like and comment on blogs in profile.ejs page.
-
-The code provided includes app.js, routes, models, views like home.ejs, settings.ejs, profile.ejs.
-
-I need to implement these changes.
-
-First, add a field to User model for privacy: boolean, say isPrivate: false (public by default).
-
-Update userSchema.
-
-Then, in settings, add a way to toggle it.
-
-In settings.ejs, the Privacy/Security popup currently has password reset. Add account privacy toggle there.
-
-Update the popup to include a checkbox or radio for public/private.
-
-Add route to update privacy.
-
-Then, in home.ejs and profile.ejs, filter blogs based on privacy.
-
-In home, it's all blogs, but need to filter if private and not followed.
-
-Home shows all blogs from all users.
-
-For private users, only show their blogs if current user follows them or is owner.
-
-In profile, if viewing a private profile, only show blogs if follower.
-
-But profile is for a specific user.
-
-Also, for follow: when sending follow request, if target is public, auto accept.
-
-In /user/follow/:id, check if userToFollow is public, then directly add follower, else send notification.
-
-Currently, it always sends request.
-
-Need to modify that.
-
-Point 3: like and comment on blog in profile.ejs.
-
-Currently, profile.ejs shows blogs as cards with title and body snippet, but no like/comment.
-
-Need to add like button and comment section under each blog in profile.
-
-Similar to home.ejs which has them.
-
-Home has per blog: like, follow author, likes preview, comments preview.
-
-Clicking preview opens modal with likes or comments.
-
-Comments modal has add comment, replies, etc.
-
-Need similar for profile page, but since multiple blogs, perhaps each blog has its own modals.
-
-Or load when clicked.
-
-But to match, add the actions under each blog card in profile.
-
-Currently profile blog cards are simple.
-
-Make them similar to home's blog cards.
-
-The user said "in profile.ejs page", so add like/comment there.
-
-Also, "I want copy paste", probably wants the updated code to copy paste.
-
-So, I need to provide the modified files.```javascript
-// models/user.js (updated)
-const { Schema, model, models } = require("mongoose");
-const { createHmac, randomBytes } = require("crypto");
-const { createTokenForUser } = require("../services/authentication");
-
-const userSchema = new Schema(
-  {
-    fullname: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    salt: {
-      type: String,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    profileImageURL: {
-      type: String,
-      default: "/images/default.png",
-    },
-    role: {
-      type: String,
-      enum: ["USER", "ADMIN"],
-      default: "USER",
-    },
-    following: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    followers: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    likedBlogs: [{ type: Schema.Types.ObjectId, ref: "Blog" }],
-    bio: { type: String, trim: true },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    verificationCode: {
-      type: String,
-    },
-    verificationCodeExpires: {
-      type: Date,
-    },
-    resetPasswordToken: {
-      type: String,
-    },
-    resetPasswordExpires: {
-      type: Date,
-    },
-    isPrivate: { // New field for account privacy
-      type: Boolean,
-      default: false, // false means public, true means private
-    },
-  },
-  { timestamps: true }
-);
-
-userSchema.pre("save", function (next) {
-  if (!this.isModified("password")) return next();
-  const salt = randomBytes(16).toString("hex");
-  this.salt = salt;
-  this.password = createHmac("sha256", salt).update(this.password).digest("hex");
-  next();
-});
-
-userSchema.statics.matchPassword = async function (email, password) {
-  const user = await this.findOne({ email });
-  if (!user) throw new Error("User not found");
-  if (!user.isVerified) throw new Error("Please verify your email before signing in");
-
-  const salt = user.salt;
-  const hashedPassword = user.password;
-  const userProvidedHash = createHmac("sha256", salt).update(password).digest("hex");
-
-  if (hashedPassword !== userProvidedHash) throw new Error("Incorrect password");
-  return createTokenForUser(user);
-};
-
-const User = models.User || model("User", userSchema);
-
-module.exports = User;
+          try {
+            const response = await fetch('/settings/delete-account', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password }),
+            });
+            const data = await response.json();
+            setLoading(deleteSubmit, false);
+            if (data.success) {
+              showMessage(deleteMessage, 'Account deleted successfully. Redirecting...', 'success');
+              setTimeout(() => {
+                window.location.href = '/?success_msg=Account deleted successfully';
+              }, 2000);
+            } else {
+              showMessage(deleteMessage, data.error || 'Error deleting account', 'error');
+            }
+          } catch (err) {
+            setLoading(deleteSubmit, false);
+            showMessage(deleteMessage, 'Error deleting account', 'error');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
