@@ -1,4 +1,4 @@
-// routes/user.js
+// routes/user.js (updated for follow logic)
 const { Router } = require("express");
 const User = require("../models/user");
 const Notification = require("../models/notification");
@@ -355,7 +355,7 @@ router.post("/follow/:id", async (req, res) => {
     }
 
     if (!userToFollow.isPrivate) {
-      // Public account: directly follow
+      // Public: directly follow
       await Promise.all([
         User.findByIdAndUpdate(currentUserId, { $addToSet: { following: userIdToFollow } }, { new: true }),
         User.findByIdAndUpdate(userIdToFollow, { $addToSet: { followers: currentUserId } }, { new: true }),
@@ -366,12 +366,12 @@ router.post("/follow/:id", async (req, res) => {
         sender: currentUserId,
         type: "FOLLOW",
         message: `${req.user.fullname} started following you`,
-        status: "ACCEPTED",
+        status: "UNREAD",
       });
 
       return res.redirect(`/profile/${userIdToFollow}?success_msg=Now following ${userToFollow.fullname}`);
     } else {
-      // Private account: send request
+      // Private: send request
       await Notification.create({
         recipient: userIdToFollow,
         sender: currentUserId,
