@@ -125,7 +125,7 @@ router.post("/:id/like", async (req, res) => {
             type: "LIKE",
             blogId: req.params.id,
             message: `${req.user.fullname} liked your post: ${blog.title}`,
-            isRead: false,
+            status: "UNREAD",
           });
         }
       }
