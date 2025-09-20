@@ -186,6 +186,39 @@
       border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
     }
     .share-btn:hover { background: var(--primary-color); }
+    .comment-form {
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .comment-form h4 {
+      color: var(--primary-color);
+      margin-bottom: 0;
+    }
+    .comment-form textarea {
+      background: var(--hover-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.8rem;
+      color: var(--text-primary);
+      font-size: 1rem;
+      resize: vertical;
+      min-height: 80px;
+    }
+    .comment-form button {
+      align-self: flex-end;
+      padding: 0.5rem 1.2rem;
+      background: var(--primary-color);
+      color: var(--text-primary);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .comment-form button:hover {
+      background: #16a085;
+    }
     @media (max-width: 600px) {
       .modal { width: 95vw; padding: 1.5rem 1rem 1rem; }
     }
@@ -255,6 +288,29 @@
   </div>
 
   <script>
+    const currentUserId = <%= user ? JSON.stringify(user._id) : 'null' %>;
+
+    window.toggleCommentLike = async function(blogId, commentId) {
+      const button = document.querySelector(`.modal.active [data-comment-id="${commentId}"]`);
+      if (!button) return;
+      const span = button.querySelector('span');
+      const currentCount = parseInt(span.textContent);
+      const isLiked = button.classList.contains('liked');
+      try {
+        const response = await fetch(`/api/blog/${blogId}/comments/${commentId}/like`, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!response.ok) throw new Error('Failed to toggle like');
+        const data = await response.json();
+        button.classList.toggle('liked', data.liked);
+        button.innerHTML = `<i class="fas fa-heart"></i> ${data.liked ? 'Unlike' : 'Like'} <span>${data.likesCount}</span>`;
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to toggle comment like');
+      }
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
       const modalOverlay = document.getElementById('modalOverlay');
       let currentBlogUrl = '';
@@ -319,24 +375,105 @@
           if (!response.ok) throw new Error('Failed to fetch comments');
           const comments = await response.json();
 
-          let commentsHtml = '<h3><i class="fas fa-comments"></i> Comments</h3>';
+          let commentsHtml = '<h3><i class="fas fa-comments"></i> Comments</h3><div class="comments-list">';
           if (comments.length > 0) {
-            commentsHtml += comments.map(comment => `
+            commentsHtml += comments.map(comment => {
+              const isLiked = currentUserId && comment.likes.some(like => like.toString() === currentUserId);
+              return `
               <div class="comment-block">
                 <img src="${comment.user.profileImageURL}" alt="${comment.user.fullname}'s profile picture" />
                 <div class="comment-content">
                   <div class="comment-author"><a href="/profile/${comment.user._id}">${comment.user.fullname}</a></div>
                   <div class="comment-text">${comment.content}</div>
                   <div class="comment-time"><i class="fas fa-clock"></i> ${moment(comment.createdAt).fromNow()}</div>
+                  <div class="comment-actions">
+                    <button class="comment-action-btn ${isLiked ? 'liked' : ''}" data-comment-id="${comment._id}">
+                      <i class="fas fa-heart"></i> ${isLiked ? 'Unlike' : 'Like'} <span>${comment.likes.length}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            `).join('');
+              `;
+            }).join('');
           } else {
             commentsHtml += '<p style="text-align:center; color:var(--text-secondary);">No comments yet. Be the first to comment!</p>';
+          }
+          commentsHtml += '</div>';
+
+          if (currentUserId) {
+            commentsHtml += `
+            <div class="comment-form">
+              <h4><i class="fas fa-pen"></i> Add a Comment</h4>
+              <form>
+                <textarea placeholder="Write your comment..." required></textarea>
+                <button type="submit" class="action-btn"><i class="fas fa-paper-plane"></i> Post</button>
+              </form>
+            </div>
+            `;
           }
 
           modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${commentsHtml}`;
           openModal(modal);
+
+          const likeButtons = modal.querySelectorAll('.comment-action-btn');
+          likeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+              const commentId = btn.dataset.commentId;
+              toggleCommentLike(blogId, commentId);
+            });
+          });
+
+          const commentForm = modal.querySelector('.comment-form form');
+          if (commentForm) {
+            commentForm.addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const textarea = commentForm.querySelector('textarea');
+              const content = textarea.value.trim();
+              if (!content) return;
+              try {
+                const res = await fetch(`/api/blog/${blogId}/comments`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                  },
+                  body: JSON.stringify({ content })
+                });
+                if (!res.ok) throw new Error('Failed to post comment');
+                const newComment = await res.json();
+                const isLiked = false;
+                const newHtml = `
+                <div class="comment-block">
+                  <img src="${newComment.user.profileImageURL}" alt="${newComment.user.fullname}'s profile picture" />
+                  <div class="comment-content">
+                    <div class="comment-author"><a href="/profile/${newComment.user._id}">${newComment.user.fullname}</a></div>
+                    <div class="comment-text">${newComment.content}</div>
+                    <div class="comment-time"><i class="fas fa-clock"></i> just now</div>
+                    <div class="comment-actions">
+                      <button class="comment-action-btn ${isLiked ? 'liked' : ''}" data-comment-id="${newComment._id}">
+                        <i class="fas fa-heart"></i> ${isLiked ? 'Unlike' : 'Like'} <span>0</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                `;
+                const list = modal.querySelector('.comments-list');
+                if (list.querySelector('p')) {
+                  list.innerHTML = '';
+                }
+                list.insertAdjacentHTML('beforeend', newHtml);
+                const newButton = list.querySelector(`[data-comment-id="${newComment._id}"]`);
+                newButton.addEventListener('click', () => toggleCommentLike(blogId, newComment._id));
+                textarea.value = '';
+                const card = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+                const commentSpan = card.querySelector('.blog-meta span:nth-child(2)');
+                commentSpan.innerHTML = `<i class="fas fa-comments"></i> ${parseInt(commentSpan.textContent.match(/\d+/)[0]) + 1} Comments`;
+              } catch (error) {
+                console.error(error);
+                alert('Failed to post comment. Please try again.');
+              }
+            });
+          }
         } catch (error) {
           console.error('Error fetching comments:', error);
           alert('Failed to load comments. Please try again.');
@@ -377,6 +514,31 @@
             menu.classList.remove('active');
           });
         }
+      });
+
+      // --- Ajax for blog like toggle ---
+      const likeForms = document.querySelectorAll('form[action^="/blog/"][action$="/like"]');
+      likeForms.forEach(form => {
+        form.addEventListener('submit', async e => {
+          e.preventDefault();
+          const button = form.querySelector('.action-btn');
+          const blogId = form.closest('.blog-card').dataset.blogId;
+          const metaLikes = form.closest('.blog-card').querySelector('.blog-meta span:first-child');
+          const isLiked = button.classList.contains('liked');
+          try {
+            const response = await fetch(`/blog/${blogId}/like`, {
+              method: 'POST',
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) throw new Error();
+            const data = await response.json();
+            button.classList.toggle('liked', data.liked);
+            button.innerHTML = `<i class="fas ${data.liked ? 'fa-heart' : 'fa-heart-broken'}"></i> ${data.liked ? 'Unlike' : 'Like'}`;
+            metaLikes.innerHTML = `<i class="fas fa-heart"></i> ${data.likesCount} Likes`;
+          } catch {
+            alert('Failed to like blog');
+          }
+        });
       });
     });
   </script>
