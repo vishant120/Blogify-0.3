@@ -481,6 +481,11 @@
       padding-left: 2rem;
       border-left: 2px solid var(--border-color);
     }
+    .comment-menu {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -664,9 +669,19 @@
                       <i class="fas fa-heart"></i>
                       <span class="like-count"><%= comment.likes.length %></span>
                     </button>
-                    <button class="comment-action-btn reply-btn" data-comment-id="<%= comment._id %>">
-                      <i class="fas fa-reply"></i> Reply
-                    </button>
+                    <div class="comment-menu">
+                      <button class="dots-btn" onclick="toggleCommentMenu(event, '<%= comment._id %>')">
+                          <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
+                        <button class="reply-btn"><i class="fas fa-reply"></i> Reply</button>
+                        <% if (user && comment.createdBy._id.toString() === user._id.toString()) { %>
+                          <form action="/comment/<%= comment._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to delete this comment?');" style="margin:0;">
+                            <button type="submit" class="delete-btn"><i class="fas fa-trash"></i> Delete Comment</button>
+                          </form>
+                        <% } %>
+                      </div>
+                    </div>
                   <% } %>
                   <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
                 </div>
@@ -731,6 +746,19 @@
       }
     }
 
+    function toggleCommentMenu(e, id) {
+      e.stopPropagation();
+      document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        if (menu.id !== `comment-menu-${id}`) {
+          menu.classList.remove('active');
+        }
+      });
+      const menu = document.getElementById(`comment-menu-${id}`);
+      if (menu) {
+        menu.classList.toggle('active');
+      }
+    }
+
     function openShare(id) {
       currentBlogId = id;
       document.getElementById('shareModal').style.display = 'block';
@@ -788,7 +816,7 @@
     }
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.blog-menu')) {
+      if (!e.target.closest('.blog-menu') && !e.target.closest('.comment-menu')) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('active'));
       }
       if (e.target === document.getElementById('shareModal')) {
@@ -1016,3 +1044,4 @@
   </script>
 </body>
 </html>
+
