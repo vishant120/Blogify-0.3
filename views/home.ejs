@@ -224,8 +224,8 @@
             <% if (user) { %>
               <form action="/blog/<%= blog._id %>/like" method="POST" style="display:inline;"><button class="action-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" type="submit"><i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i> <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %></button></form>
             <% } %>
-            <div class="likes-preview" onclick="showLikes('<%= blog._id %>')"> ... </div>
-            <div class="comments-preview" onclick="showComments('<%= blog._id %>')"> ... </div>
+            <button class="likes-preview" onclick="showLikes('<%= blog._id %>')"><i class="fas fa-thumbs-up"></i> View Likes</button>
+            <button class="comments-preview" onclick="showComments('<%= blog._id %>')"><i class="fas fa-comment"></i> View Comments</button>
             <a href="/blog/<%= blog._id %>" class="action-btn" style="background:var(--secondary-color);"><i class="fas fa-arrow-right"></i> Read Blog</a>
           </div>
           <div class="blog-menu">
@@ -238,8 +238,8 @@
               <% } %>
             </div>
           </div>
-          <div id="likesModal-<%= blog._id %>" class="modal"> ... </div>
-          <div id="commentsModal-<%= blog._id %>" class="modal"> ... </div>
+          <div id="likesModal-<%= blog._id %>" class="modal"></div>
+          <div id="commentsModal-<%= blog._id %>" class="modal"></div>
         </div>
       <% }) %>
     </div>
@@ -278,9 +278,70 @@
       
       modalOverlay.addEventListener('click', closeModal);
 
-      // --- Specific Modal Triggers ---
-      window.showLikes = (blogId) => openModal(document.getElementById('likesModal-' + blogId));
-      window.showComments = (blogId) => openModal(document.getElementById('commentsModal-' + blogId));
+      // --- Specific Modal Triggers & Data Fetching ---
+      window.showLikes = async (blogId) => {
+        const modal = document.getElementById('likesModal-' + blogId);
+        if (!modal) return;
+        
+        try {
+          const response = await fetch(`/api/blog/${blogId}/likes`);
+          if (!response.ok) throw new Error('Failed to fetch likes');
+          const likes = await response.json();
+          
+          let likesHtml = '<h3><i class="fas fa-heart"></i> Likes</h3>';
+          if (likes.length > 0) {
+            likesHtml += likes.map(like => `
+              <div class="like-block">
+                <img src="${like.profileImageURL}" alt="${like.fullname}'s profile picture" />
+                <div class="like-content">
+                  <div class="like-author"><a href="/profile/${like._id}">${like.fullname}</a></div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            likesHtml += '<p style="text-align:center; color:var(--text-secondary);">No one has liked this blog yet.</p>';
+          }
+          
+          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${likesHtml}`;
+          openModal(modal);
+        } catch (error) {
+          console.error('Error fetching likes:', error);
+          alert('Failed to load likes. Please try again.');
+        }
+      };
+
+      window.showComments = async (blogId) => {
+        const modal = document.getElementById('commentsModal-' + blogId);
+        if (!modal) return;
+
+        try {
+          const response = await fetch(`/api/blog/${blogId}/comments`);
+          if (!response.ok) throw new Error('Failed to fetch comments');
+          const comments = await response.json();
+
+          let commentsHtml = '<h3><i class="fas fa-comments"></i> Comments</h3>';
+          if (comments.length > 0) {
+            commentsHtml += comments.map(comment => `
+              <div class="comment-block">
+                <img src="${comment.user.profileImageURL}" alt="${comment.user.fullname}'s profile picture" />
+                <div class="comment-content">
+                  <div class="comment-author"><a href="/profile/${comment.user._id}">${comment.user.fullname}</a></div>
+                  <div class="comment-text">${comment.content}</div>
+                  <div class="comment-time"><i class="fas fa-clock"></i> ${moment(comment.createdAt).fromNow()}</div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            commentsHtml += '<p style="text-align:center; color:var(--text-secondary);">No comments yet. Be the first to comment!</p>';
+          }
+
+          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${commentsHtml}`;
+          openModal(modal);
+        } catch (error) {
+          console.error('Error fetching comments:', error);
+          alert('Failed to load comments. Please try again.');
+        }
+      };
       
       window.openShare = (blogId) => {
         currentBlogUrl = `${window.location.origin}/blog/${blogId}`;
@@ -297,27 +358,25 @@
 
       // --- Dropdown Menu Toggle ---
       window.toggleMenu = (event, blogId) => {
-        // This is the key fix: it stops the click from closing the menu immediately.
-        event.stopPropagation(); 
+        event.stopPropagation();
         const menu = document.getElementById('menu-' + blogId);
         const isAlreadyActive = menu.classList.contains('active');
         
-        // First, close any other open menus.
         document.querySelectorAll('.dropdown-menu.active').forEach(openMenu => {
           openMenu.classList.remove('active');
         });
 
-        // If the clicked menu wasn't already open, open it.
         if (!isAlreadyActive) {
           menu.classList.add('active');
         }
       }
 
-      // Close dropdown when clicking anywhere else on the page.
-      window.addEventListener('click', () => {
-        document.querySelectorAll('.dropdown-menu.active').forEach(menu => {
-          menu.classList.remove('active');
-        });
+      window.addEventListener('click', (event) => {
+        if (!event.target.closest('.blog-menu')) {
+          document.querySelectorAll('.dropdown-menu.active').forEach(menu => {
+            menu.classList.remove('active');
+          });
+        }
       });
     });
   </script>
