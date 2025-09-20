@@ -1,3 +1,4 @@
+// models/notification.js (updated with FOLLOW type)
 const { Schema, model } = require("mongoose");
 
 const notificationSchema = new Schema(
@@ -6,7 +7,7 @@ const notificationSchema = new Schema(
     sender: { type: Schema.Types.ObjectId, ref: "User", required: true },
     type: {
       type: String,
-      enum: ["FOLLOW_REQUEST", "LIKE", "COMMENT", "REPLY"],
+      enum: ["FOLLOW_REQUEST", "FOLLOW", "LIKE", "COMMENT", "REPLY"],
       required: true,
     },
     blogId: { type: Schema.Types.ObjectId, ref: "Blog", default: null },
