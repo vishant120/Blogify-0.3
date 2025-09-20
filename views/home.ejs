@@ -95,7 +95,7 @@
       outline: 2px solid var(--primary-color); outline-offset: 2px;
     }
     .blog-actions {
-      display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.5rem; align-items: center;
+      display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.5rem; align-items: center;
     }
     .action-btn, .follow-btn {
       border: none; outline: none; border-radius: 6px; padding: 0.47rem 1.13rem; font-size: 1rem;
@@ -127,7 +127,7 @@
     .dropdown-menu button, .dropdown-menu a {
       display: block; width: 100%; padding: 0.6rem 1rem;
       background: none; border: none; color: var(--text-primary);
-      text-align: left; cursor: pointer; transition: background 0.2s; text-decoration: none;
+      text-align: left; cursor: pointer; transition: background 0.2s; text-decoration: none; font-size: 1rem;
     }
     .dropdown-menu button:hover, .dropdown-menu a:hover { background: var(--hover-bg); }
     .dropdown-menu .delete-btn { color: var(--danger-color); }
@@ -211,41 +211,49 @@
               <span style="color:var(--text-secondary);font-size:0.95rem;"><i class="fas fa-clock"></i> <%= moment(blog.createdAt).fromNow() %></span>
             </div>
           </div>
-          <div class="blog-title"><a href="/blog/<%= blog._id %>"><%= blog.title %></a></div>
-          <div class="blog-meta">
-            <span><i class="fas fa-heart"></i> <%= blog.likes.length %> Likes</span>
-            <span><i class="fas fa-comments"></i> <%= blog.totalComments %> Comments</span>
-          </div>
+          <h2 class="blog-title"><a href="/blog/<%= blog._id %>"><%= blog.title %></a></h2>
           <div class="blog-excerpt">
             <%= blog.body.length > 220 ? blog.body.substring(0, 220) + "..." : blog.body %>
             <a href="/blog/<%= blog._id %>">Read more</a>
           </div>
           <div class="blog-actions">
             <% if (user) { %>
-              <form action="/blog/<%= blog._id %>/like" method="POST" style="display:inline;"><button class="action-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" type="submit"><i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i> <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %></button></form>
+              <form action="/blog/<%= blog._id %>/like" method="POST" style="display:inline;"><button class="action-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" type="submit"><i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart-crack' : 'fa-heart' %>"></i><span><%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %></span></button></form>
             <% } %>
-            <button class="likes-preview" onclick="showLikes('<%= blog._id %>')"><i class="fas fa-thumbs-up"></i> View Likes</button>
-            <button class="comments-preview" onclick="showComments('<%= blog._id %>')"><i class="fas fa-comment"></i> View Comments</button>
-            <a href="/blog/<%= blog._id %>" class="action-btn" style="background:var(--secondary-color);"><i class="fas fa-arrow-right"></i> Read Blog</a>
+            <button class="likes-preview" onclick="showLikes('<%= blog._id %>')"><i class="fas fa-thumbs-up"></i> <%= blog.likes.length %> Likes</button>
+            <button class="comments-preview" onclick="showComments('<%= blog._id %>')"><i class="fas fa-comment"></i> <%= blog.totalComments %> Comments</button>
           </div>
           <div class="blog-menu">
             <button class="dots-btn" onclick="toggleMenu(event, '<%= blog._id %>')"><i class="fas fa-ellipsis-v"></i></button>
             <div class="dropdown-menu" id="menu-<%= blog._id %>">
               <% if (blog.isOwn) { %>
+                 <a href="/blog/edit/<%= blog._id %>" style="font-size: 1rem;"><i class="fas fa-edit"></i> Edit Blog</a>
                 <form action="/blog/<%= blog._id %>?_method=DELETE" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this blog?');"><button type="submit" class="delete-btn"><i class="fas fa-trash"></i> Delete blog</button></form>
               <% } else { %>
+                 <% if (user) { %>
+                  <form action="/user/<%= blog.createdBy._id %>/follow" method="POST" style="margin:0;"><button type="submit" class="follow-btn" style="width: 100%;"><i class="fas fa-user-plus"></i> Follow</button></form>
+                 <% } %>
                 <button onclick="openShare('<%= blog._id %>')"><i class="fas fa-share"></i> Share blog</button>
               <% } %>
             </div>
           </div>
-          <div id="likesModal-<%= blog._id %>" class="modal"></div>
-          <div id="commentsModal-<%= blog._id %>" class="modal"></div>
+          <!-- MODAL DIVS REMOVED FROM HERE -->
         </div>
       <% }) %>
     </div>
   </div>
 
+  <!-- MODAL STRUCTURES MOVED OUTSIDE THE LOOP -->
   <div id="modalOverlay"></div>
+
+  <div id="likesModal" class="modal">
+    <!-- Like content will be dynamically injected here -->
+  </div>
+
+  <div id="commentsModal" class="modal">
+    <!-- Comment content will be dynamically injected here -->
+  </div>
+
   <div id="shareModal" class="modal">
     <button class="close-btn" onclick="closeModal()">&times;</button>
     <h3><i class="fas fa-share"></i> Share Blog</h3>
@@ -277,19 +285,30 @@
       }
       
       modalOverlay.addEventListener('click', closeModal);
+      // Also close modal on 'Escape' key press
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      });
+
 
       // --- Specific Modal Triggers & Data Fetching ---
       window.showLikes = async (blogId) => {
-        const modal = document.getElementById('likesModal-' + blogId);
+        // JAVASCRIPT UPDATED: Target the single #likesModal
+        const modal = document.getElementById('likesModal');
         if (!modal) return;
+
+        // Show a loading state
+        modal.innerHTML = `<h3><i class="fas fa-heart"></i> Likes</h3><p style="text-align:center; color:var(--text-secondary);">Loading...</p>`;
+        openModal(modal);
         
         try {
-          // Replace with your actual API endpoint to fetch likes for a blog post
           const response = await fetch(`/api/blog/${blogId}/likes`);
           if (!response.ok) throw new Error('Failed to fetch likes');
           const likes = await response.json();
           
-          let likesHtml = '<h3><i class="fas fa-heart"></i> Likes</h3>';
+          let likesHtml = '';
           if (likes.length > 0) {
             likesHtml += likes.map(like => `
               <div class="like-block">
@@ -303,25 +322,28 @@
             likesHtml += '<p style="text-align:center; color:var(--text-secondary);">No one has liked this blog yet.</p>';
           }
           
-          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${likesHtml}`;
-          openModal(modal);
+          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button><h3><i class="fas fa-heart"></i> Likes</h3>${likesHtml}`;
         } catch (error) {
           console.error('Error fetching likes:', error);
-          alert('Failed to load likes. Please try again.');
+          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button><h3><i class="fas fa-heart"></i> Likes</h3><p style="text-align:center; color:var(--danger-color);">Failed to load likes. Please try again.</p>`;
         }
       };
 
       window.showComments = async (blogId) => {
-        const modal = document.getElementById('commentsModal-' + blogId);
+        // JAVASCRIPT UPDATED: Target the single #commentsModal
+        const modal = document.getElementById('commentsModal');
         if (!modal) return;
 
+        // Show a loading state
+        modal.innerHTML = `<h3><i class="fas fa-comments"></i> Comments</h3><p style="text-align:center; color:var(--text-secondary);">Loading...</p>`;
+        openModal(modal);
+
         try {
-          // Replace with your actual API endpoint to fetch comments for a blog post
           const response = await fetch(`/api/blog/${blogId}/comments`);
           if (!response.ok) throw new Error('Failed to fetch comments');
           const comments = await response.json();
 
-          let commentsHtml = '<h3><i class="fas fa-comments"></i> Comments</h3>';
+          let commentsHtml = '';
           if (comments.length > 0) {
             commentsHtml += comments.map(comment => `
               <div class="comment-block">
@@ -337,11 +359,10 @@
             commentsHtml += '<p style="text-align:center; color:var(--text-secondary);">No comments yet. Be the first to comment!</p>';
           }
 
-          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${commentsHtml}`;
-          openModal(modal);
+          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button><h3><i class="fas fa-comments"></i> Comments</h3>${commentsHtml}`;
         } catch (error) {
           console.error('Error fetching comments:', error);
-          alert('Failed to load comments. Please try again.');
+          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button><h3><i class="fas fa-comments"></i> Comments</h3><p style="text-align:center; color:var(--danger-color);">Failed to load comments. Please try again.</p>`;
         }
       };
       
