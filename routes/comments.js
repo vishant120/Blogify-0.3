@@ -1,5 +1,7 @@
 const { Router } = require("express");
 const Comment = require("../models/comments");
+const Blog = require("../models/blog");
+const Notification = require("../models/notification");
 
 const router = Router();
 
@@ -16,6 +18,20 @@ router.post("/:blogId", async (req, res) => {
       createdBy: req.user._id,
       likes: [],
     });
+
+    const blog = await Blog.findById(req.params.blogId);
+    if (blog && !blog.createdBy.equals(req.user._id)) {
+      await Notification.create({
+        recipient: blog.createdBy,
+        sender: req.user._id,
+        type: "COMMENT",
+        blogId: blog._id,
+        message: `${req.user.fullname} commented on your post "${blog.title}"`,
+        content: req.body.content,
+        status: "UNREAD"
+      });
+    }
+
     if (req.isXhr) {
       const populatedComment = await Comment.findById(comment._id)
         .populate("createdBy", "fullname profileImageURL")
@@ -49,6 +65,19 @@ router.post("/reply/:parentId", async (req, res) => {
       parent: parent._id,
       likes: [],
     });
+
+    if (!parent.createdBy.equals(req.user._id)) {
+      await Notification.create({
+        recipient: parent.createdBy,
+        sender: req.user._id,
+        type: "REPLY",
+        blogId: parent.blogId,
+        message: `${req.user.fullname} replied to your comment`,
+        content: req.body.content,
+        status: "UNREAD"
+      });
+    }
+
     if (req.isXhr) {
       const populatedReply = await Comment.findById(reply._id)
         .populate("createdBy", "fullname profileImageURL")
