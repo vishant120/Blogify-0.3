@@ -466,6 +466,7 @@
       display: flex;
       gap: 0.75rem;
       margin-top: 0.5rem;
+      flex-wrap: wrap; /* Allow buttons to wrap on small screens */
     }
     .comment-action-btn {
       background: none;
@@ -476,6 +477,7 @@
       display: flex;
       align-items: center;
       gap: 0.3rem;
+      padding: 0; /* Remove default padding */
     }
     .comment-action-btn.liked {
       color: var(--danger-color);
@@ -490,7 +492,19 @@
       margin-top: 1rem;
       padding-left: 2rem;
       border-left: 2px solid var(--border-color);
+      /* --- New styles for collapsible replies --- */
+      display: none;
     }
+    .comment-replies.visible {
+      display: block;
+    }
+    .toggle-replies-btn i {
+      transition: transform 0.3s ease;
+    }
+    .toggle-replies-btn.open i {
+      transform: rotate(180deg);
+    }
+    /* --- End of new styles --- */
   </style>
 </head>
 <body>
@@ -678,7 +692,12 @@
                       <i class="fas fa-reply"></i> Reply
                     </button>
                   <% } %>
-                  <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
+                  <% if (comment.replies && comment.replies.length > 0) { %>
+                    <button class="comment-action-btn toggle-replies-btn" data-comment-id="<%= comment._id %>">
+                      <i class="fas fa-chevron-down"></i>&nbsp;
+                      <span class="toggle-text">Show <%= comment.replies.length %> Replies</span>
+                    </button>
+                  <% } %>
                 </div>
                 <div class="comment-replies">
                   <% if (comment.replies && comment.replies.length > 0) { %>
@@ -894,251 +913,33 @@
               const finalStatus = data.newStatus;
               
               btn.dataset.followStatus = finalStatus;
-              btn.classList.remove('following', 'requested', 'cancel');
-              
-              const btnText = btn.querySelector('.btn-text') || btn;
-              const btnIcon = btn.querySelector('i');
 
-              if (finalStatus === 'following') {
-                btnText.textContent = 'Unfollow';
-                if (btnIcon) btnIcon.className = 'fas fa-user-minus';
-                btn.classList.add('following');
-              } else if (finalStatus === 'requested') {
-                btnText.textContent = 'Cancel Request';
-                if (btnIcon) btnIcon.className = 'fas fa-user-times';
-                btn.classList.add('requested');
-              } else {
-                btnText.textContent = 'Follow';
-                if (btnIcon) btnIcon.className = 'fas fa-user-plus';
-              }
-            } else {
-              alert('Action failed. Please try again.');
-            }
-          } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-          }
-        });
-      });
+              // --- ADDED: Event listener for reply visibility toggle ---
+              document.querySelectorAll('.toggle-replies-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const commentBlock = button.closest('.comment-block');
+                    if (commentBlock) {
+                        const repliesContainer = commentBlock.querySelector('.comment-replies');
+                        const toggleText = button.querySelector('.toggle-text');
+                        
+                        // Toggle visibility and button state
+                        button.classList.toggle('open');
+                        repliesContainer.classList.toggle('visible');
 
-      // Like a comment
-      document.querySelectorAll('.like-comment-btn').forEach(button => {
-        button.addEventListener('click', async () => {
-          const commentId = button.dataset.commentId;
-          const isLiked = button.classList.contains('liked');
-          const likeCountSpan = button.querySelector('.like-count');
-
-          try {
-            const response = await fetch(`/comment/${commentId}/like`, {
-              method: isLiked ? 'DELETE' : 'POST',
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json'
-              }
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              button.classList.toggle('liked');
-              likeCountSpan.textContent = data.likesCount;
-            } else {
-              console.error('Failed to like comment');
-            }
-          } catch (error) {
-            console.error('Error during fetch:', error);
-          }
-        });
-      });
-
-      // Delete a comment or reply
-      document.querySelectorAll('.delete-comment-btn').forEach(button => {
-        button.addEventListener('click', async () => {
-          if (!confirm('Are you sure you want to delete this?')) return;
-
-          const commentId = button.dataset.commentId;
-          const commentBlock = button.closest('.comment-block');
-          const isReply = commentBlock.parentElement.classList.contains('comment-replies');
-          const repliesContainer = commentBlock.querySelector('.comment-replies');
-          const replyCount = repliesContainer ? repliesContainer.querySelectorAll('.comment-block').length : 0;
-          const deletedCount = isReply ? 1 : 1 + replyCount;
-
-          try {
-            const response = await fetch(`/comment/${commentId}`, {
-              method: 'DELETE',
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json'
-              }
-            });
-
-            if (response.ok) {
-              commentBlock.remove();
-
-              // Update total comments count
-              const modal = button.closest('.modal');
-              const modalId = modal.id;
-              const blogId = modalId.split('-')[1];
-              const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
-              const countSpan = blogCard.querySelector('.comments-count');
-              const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
-              let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
-              currentCount -= deletedCount;
-              countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
-
-              // Check if no comments left
-              const commentsList = modal.querySelector('.comments-list');
-              if (commentsList.querySelectorAll('.comment-block').length === 0) {
-                commentsList.innerHTML = '<div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>';
-              }
-            } else {
-              alert('Failed to delete');
-            }
-          } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred');
-          }
-        });
-      });
-
-      // Show Reply Form
-      document.querySelectorAll('.reply-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-          const commentBlock = e.target.closest('.comment-block');
-          const replyFormContainer = commentBlock.querySelector('.reply-form-container');
-          const commentId = button.dataset.commentId;
-
-          // Remove any existing reply forms
-          document.querySelectorAll('.comment-reply-form').forEach(form => form.remove());
-
-          const replyFormHtml = `
-            <form action="/comment/reply/${commentId}" method="POST" class="comment-reply-form">
-              <textarea name="content" required placeholder="Write a reply…" rows="2"
-                        style="width:100%; padding:.6rem; border-radius:4px; background:#2c3e50; color:#ecf0f1; border:1px solid #34495e;"></textarea>
-              <button type="submit" style="margin-top:.5rem; padding:.5rem 1rem; background:#3498db; border:none; border-radius:4px; color:#fff; cursor:pointer;">
-                Post Reply
-              </button>
-            </form>
-          `;
-          replyFormContainer.innerHTML = replyFormHtml;
-
-          // Focus on the new textarea
-          const newForm = replyFormContainer.querySelector('form');
-          if (newForm) {
-            const textarea = newForm.querySelector('textarea');
-            if (textarea) textarea.focus();
-            
-            // Add submit listener to the new form
-            newForm.addEventListener('submit', (e) => {
-              handleFormSubmit(e, (data, form) => {
-                if (data.success) {
-                  // Assuming the server returns the new reply object
-                  const newReply = data.newReply;
-                  const repliesContainer = form.closest('.comment-content').querySelector('.comment-replies');
-                  
-                  const replyHtml = `
-                    <div class="comment-block" data-comment-id="${newReply._id}">
-                      <img src="${newReply.createdBy.profileImageURL}" alt="Profile Image">
-                      <div class="comment-content">
-                        <div class="comment-author"><a href="/profile/${newReply.createdBy._id}" style="color:var(--primary-color);text-decoration:none;">${newReply.createdBy.fullname}</a></div>
-                        <div class="comment-text">${newReply.content}</div>
-                        <div class="comment-time"><i class="fas fa-clock"></i> Just now</div>
-                        <div class="comment-actions">
-                          <button class="comment-action-btn like-comment-btn" data-comment-id="${newReply._id}">
-                            <i class="fas fa-heart"></i>
-                            <span class="like-count">0</span>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="comment-menu">
-                        <button class="dots-btn" onclick="toggleCommentMenu('${newReply._id}')">
-                          <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div class="dropdown-menu" id="comment-menu-${newReply._id}">
-                          <button class="delete-btn delete-comment-btn" data-comment-id="${newReply._id}"><i class="fas fa-trash"></i> Delete</button>
-                        </div>
-                      </div>
-                    </div>
-                  `;
-                  repliesContainer.innerHTML += replyHtml;
-                  form.remove(); // Remove the reply form after submission
-
-                  // Update total comments count
-                  const modal = form.closest('.modal');
-                  const modalId = modal.id;
-                  const blogId = modalId.split('-')[1];
-                  const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
-                  const countSpan = blogCard.querySelector('.comments-count');
-                  const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
-                  let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
-                  currentCount += 1;
-                  countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
-                } else {
-                  alert('Failed to post reply.');
-                }
+                        // Update button text
+                        const replyCount = repliesContainer.querySelectorAll('.comment-block').length;
+                        if (repliesContainer.classList.contains('visible')) {
+                            toggleText.textContent = `Hide ${replyCount} Replies`;
+                        } else {
+                            toggleText.textContent = `Show ${replyCount} Replies`;
+                        }
+                    }
+                });
               });
-            });
-          }
-        });
-      });
-
-      // Handle main comment form submission
-      document.querySelectorAll('.post-comment-form').forEach(form => {
-        form.addEventListener('submit', (e) => {
-          handleFormSubmit(e, (data, form) => {
-            if (data.success) {
-              const newComment = data.newComment;
-              const commentsList = form.closest('.modal').querySelector('.comments-list');
-              const newCommentHtml = `
-                <div class="comment-block" data-comment-id="${newComment._id}">
-                  <img src="${newComment.createdBy.profileImageURL}" alt="Profile Image">
-                  <div class="comment-content">
-                    <div class="comment-author"><a href="/profile/${newComment.createdBy._id}" style="color:var(--primary-color);text-decoration:none;">${newComment.createdBy.fullname}</a></div>
-                    <div class="comment-text">${newComment.content}</div>
-                    <div class="comment-time"><i class="fas fa-clock"></i> Just now</div>
-                    <div class="comment-actions">
-                      <button class="comment-action-btn like-comment-btn" data-comment-id="${newComment._id}">
-                        <i class="fas fa-heart"></i>
-                        <span class="like-count">0</span>
-                      </button>
-                      <button class="comment-action-btn reply-btn" data-comment-id="${newComment._id}">
-                        <i class="fas fa-reply"></i> Reply
-                      </button>
-                      <span class="reply-count"><i class="fas fa-reply-all"></i> 0</span>
-                    </div>
-                    <div class="comment-replies"></div>
-                    <div class="reply-form-container"></div>
-                  </div>
-                  <div class="comment-menu">
-                    <button class="dots-btn" onclick="toggleCommentMenu('${newComment._id}')">
-                      <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <div class="dropdown-menu" id="comment-menu-${newComment._id}">
-                      <button class="delete-btn delete-comment-btn" data-comment-id="${newComment._id}"><i class="fas fa-trash"></i> Delete</button>
-                    </div>
-                  </div>
-                </div>
-              `;
-              commentsList.innerHTML += newCommentHtml;
-              form.querySelector('textarea').value = '';
-
-              // Remove "No comments yet" if present
-              const noCommentsDiv = commentsList.querySelector('div[style*="color:#b2becd"]');
-              if (noCommentsDiv) noCommentsDiv.remove();
-
-              // Update total comments count
-              const modal = form.closest('.modal');
-              const modalId = modal.id;
-              const blogId = modalId.split('-')[1];
-              const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
-              const countSpan = blogCard.querySelector('.comments-count');
-              const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
-              let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
-              currentCount += 1;
-              countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
-            } else {
-              alert('Failed to post comment.');
             }
-          });
+          } catch(err) {
+            console.error(err);
+          }
         });
       });
     });
