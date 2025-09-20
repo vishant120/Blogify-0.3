@@ -17,6 +17,7 @@
       --text-primary: #fff;
       --text-secondary: #b2becd;
       --border-color: #262b2f;
+      --border-color: #262b2f;
       --hover-bg: #20252a;
       --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
     }
@@ -245,6 +246,26 @@
     </div>
   </div>
 
+  <script>
+    const blogsData = <%- JSON.stringify(blogs.map(blog => ({
+      _id: blog._id,
+      likes: blog.likes.map(like => ({
+        _id: like._id,
+        fullname: like.fullname,
+        profileImageURL: like.profileImageURL
+      })),
+      comments: blog.comments.map(comment => ({
+        user: {
+          _id: comment.createdBy._id,
+          fullname: comment.createdBy.fullname,
+          profileImageURL: comment.createdBy.profileImageURL
+        },
+        content: comment.content,
+        createdAt: comment.createdAt
+      }))
+    }))) %>;
+  </script>
+
   <div id="modalOverlay"></div>
   <div id="shareModal" class="modal">
     <button class="close-btn" onclick="closeModal()">&times;</button>
@@ -260,10 +281,10 @@
       let currentBlogUrl = '';
 
       // --- Generic Modal Controls ---
-      function openModal(modal) {
-        if (modal) {
+      function openModal(m) {
+        if (m) {
           modalOverlay.classList.add('active');
-          modal.classList.add('active');
+          m.classList.add('active');
           document.body.classList.add('modal-open');
         }
       }
@@ -279,68 +300,56 @@
       modalOverlay.addEventListener('click', closeModal);
 
       // --- Specific Modal Triggers & Data Fetching ---
-      window.showLikes = async (blogId) => {
+      window.showLikes = (blogId) => {
         const modal = document.getElementById('likesModal-' + blogId);
-        if (!modal) return;
+        const blog = blogsData.find(b => b._id === blogId);
+        if (!blog || !modal) return;
         
-        try {
-          const response = await fetch(`/api/blog/${blogId}/likes`);
-          if (!response.ok) throw new Error('Failed to fetch likes');
-          const likes = await response.json();
-          
-          let likesHtml = '<h3><i class="fas fa-heart"></i> Likes</h3>';
-          if (likes.length > 0) {
-            likesHtml += likes.map(like => `
-              <div class="like-block">
-                <img src="${like.profileImageURL}" alt="${like.fullname}'s profile picture" />
-                <div class="like-content">
-                  <div class="like-author"><a href="/profile/${like._id}">${like.fullname}</a></div>
-                </div>
+        const likes = blog.likes;
+        
+        let likesHtml = '<h3><i class="fas fa-heart"></i> Likes</h3>';
+        if (likes.length > 0) {
+          likesHtml += likes.map(like => `
+            <div class="like-block">
+              <img src="${like.profileImageURL}" alt="${like.fullname}'s profile picture" />
+              <div class="like-content">
+                <div class="like-author"><a href="/profile/${like._id}">${like.fullname}</a></div>
               </div>
-            `).join('');
-          } else {
-            likesHtml += '<p style="text-align:center; color:var(--text-secondary);">No one has liked this blog yet.</p>';
-          }
-          
-          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${likesHtml}`;
-          openModal(modal);
-        } catch (error) {
-          console.error('Error fetching likes:', error);
-          alert('Failed to load likes. Please try again.');
+            </div>
+          `).join('');
+        } else {
+          likesHtml += '<p style="text-align:center; color:var(--text-secondary);">No one has liked this blog yet.</p>';
         }
+        
+        modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${likesHtml}`;
+        openModal(modal);
       };
 
-      window.showComments = async (blogId) => {
+      window.showComments = (blogId) => {
         const modal = document.getElementById('commentsModal-' + blogId);
-        if (!modal) return;
+        const blog = blogsData.find(b => b._id === blogId);
+        if (!blog || !modal) return;
 
-        try {
-          const response = await fetch(`/api/blog/${blogId}/comments`);
-          if (!response.ok) throw new Error('Failed to fetch comments');
-          const comments = await response.json();
+        const comments = blog.comments;
 
-          let commentsHtml = '<h3><i class="fas fa-comments"></i> Comments</h3>';
-          if (comments.length > 0) {
-            commentsHtml += comments.map(comment => `
-              <div class="comment-block">
-                <img src="${comment.user.profileImageURL}" alt="${comment.user.fullname}'s profile picture" />
-                <div class="comment-content">
-                  <div class="comment-author"><a href="/profile/${comment.user._id}">${comment.user.fullname}</a></div>
-                  <div class="comment-text">${comment.content}</div>
-                  <div class="comment-time"><i class="fas fa-clock"></i> ${moment(comment.createdAt).fromNow()}</div>
-                </div>
+        let commentsHtml = '<h3><i class="fas fa-comments"></i> Comments</h3>';
+        if (comments.length > 0) {
+          commentsHtml += comments.map(comment => `
+            <div class="comment-block">
+              <img src="${comment.user.profileImageURL}" alt="${comment.user.fullname}'s profile picture" />
+              <div class="comment-content">
+                <div class="comment-author"><a href="/profile/${comment.user._id}">${comment.user.fullname}</a></div>
+                <div class="comment-text">${comment.content}</div>
+                <div class="comment-time"><i class="fas fa-clock"></i> ${moment(comment.createdAt).fromNow()}</div>
               </div>
-            `).join('');
-          } else {
-            commentsHtml += '<p style="text-align:center; color:var(--text-secondary);">No comments yet. Be the first to comment!</p>';
-          }
-
-          modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${commentsHtml}`;
-          openModal(modal);
-        } catch (error) {
-          console.error('Error fetching comments:', error);
-          alert('Failed to load comments. Please try again.');
+            </div>
+          `).join('');
+        } else {
+          commentsHtml += '<p style="text-align:center; color:var(--text-secondary);">No comments yet. Be the first to comment!</p>';
         }
+
+        modal.innerHTML = `<button class="close-btn" onclick="closeModal()">&times;</button>${commentsHtml}`;
+        openModal(modal);
       };
       
       window.openShare = (blogId) => {
