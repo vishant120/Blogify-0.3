@@ -63,19 +63,27 @@ router.post("/update-profile", cloudinaryUpload.single("profileImage"), async (r
   }
 });
 
-// POST /settings/update-privacy (fixed boolean check)
+// POST /settings/update-privacy (FIXED & IMPROVED)
 router.post("/update-privacy", async (req, res) => {
   try {
     if (!req.user) {
       return res.redirect("/user/signin?error_msg=Please log in to update privacy");
     }
 
-    const { isPrivate } = req.body;
-    const update = { isPrivate: !!isPrivate }; // Fixed: handles boolean/true string
+    // A checkbox sends 'on' when checked and is undefined when not.
+    // This logic correctly converts that to true/false.
+    const isPrivate = req.body.isPrivate === 'on';
 
-    const updatedUser = await User.findByIdAndUpdate(req.user._id, update, { new: true });
-    if (!updatedUser) return res.redirect("/settings?error_msg=User not found");
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { isPrivate: isPrivate },
+      { new: true }
+    );
+    if (!updatedUser) {
+      return res.redirect("/settings?error_msg=User not found");
+    }
 
+    // Re-issue the token with updated user data
     const token = createTokenForUser(updatedUser);
     res.cookie("token", token, { httpOnly: true });
     return res.redirect("/settings?success_msg=Privacy updated successfully");
@@ -84,6 +92,7 @@ router.post("/update-privacy", async (req, res) => {
     return res.redirect("/settings?error_msg=Failed to update privacy");
   }
 });
+
 
 // POST /settings/request-password-reset
 router.post("/request-password-reset", async (req, res) => {
