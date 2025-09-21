@@ -1,4 +1,4 @@
-// routes/user.js (updated for follow logic)
+// routes/user.js
 const { Router } = require("express");
 const User = require("../models/user");
 const Notification = require("../models/notification");
@@ -361,7 +361,7 @@ router.post("/follow/:id", async (req, res) => {
         User.findByIdAndUpdate(userIdToFollow, { $addToSet: { followers: currentUserId } }, { new: true }),
       ]);
 
-      await Notification.create({
+      const newNotification = await Notification.create({
         recipient: userIdToFollow,
         sender: currentUserId,
         type: "FOLLOW",
@@ -369,16 +369,20 @@ router.post("/follow/:id", async (req, res) => {
         status: "UNREAD",
       });
 
+      req.app.io.to(userIdToFollow.toString()).emit('newNotification', newNotification.toJSON());
+
       return res.redirect(`/profile/${userIdToFollow}?success_msg=Now following ${userToFollow.fullname}`);
     } else {
       // Private: send request
-      await Notification.create({
+      const newNotification = await Notification.create({
         recipient: userIdToFollow,
         sender: currentUserId,
         type: "FOLLOW_REQUEST",
         message: `${req.user.fullname} wants to follow you`,
         status: "PENDING",
       });
+
+      req.app.io.to(userIdToFollow.toString()).emit('newNotification', newNotification.toJSON());
 
       return res.redirect(`/profile/${userIdToFollow}?success_msg=Follow request sent to ${userToFollow.fullname}`);
     }
