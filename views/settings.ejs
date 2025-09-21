@@ -439,8 +439,8 @@
             const data = await response.json();
             setLoading(privacySubmit, false);
             if (data.success) {
-              showMessage(privacyMessage, 'Privacy settings updated', 'success');
-              setTimeout(() => location.reload(), 2000);
+              showMessage(privacyMessage, data.message || 'Privacy updated successfully', 'success');
+              setTimeout(() => location.href = "/settings?success_msg=Privacy updated successfully", 2000);
             } else {
               showMessage(privacyMessage, data.error || 'Error updating privacy', 'error');
             }
