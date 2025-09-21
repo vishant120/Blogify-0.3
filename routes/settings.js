@@ -63,24 +63,33 @@ router.post("/update-profile", cloudinaryUpload.single("profileImage"), async (r
   }
 });
 
-// POST /settings/update-privacy (fixed boolean check)
+// POST /settings/update-privacy
 router.post("/update-privacy", async (req, res) => {
   try {
     if (!req.user) {
+      if (req.isXhr) return res.status(401).json({ success: false, error: "Please log in to update privacy" });
       return res.redirect("/user/signin?error_msg=Please log in to update privacy");
     }
 
     const { isPrivate } = req.body;
-    const update = { isPrivate: !!isPrivate }; // Fixed: handles boolean/true string
+    const update = { isPrivate: !!isPrivate }; // Handles boolean/true string
 
     const updatedUser = await User.findByIdAndUpdate(req.user._id, update, { new: true });
-    if (!updatedUser) return res.redirect("/settings?error_msg=User not found");
+    if (!updatedUser) {
+      if (req.isXhr) return res.status(404).json({ success: false, error: "User not found" });
+      return res.redirect("/settings?error_msg=User not found");
+    }
 
     const token = createTokenForUser(updatedUser);
     res.cookie("token", token, { httpOnly: true });
+
+    if (req.isXhr) {
+      return res.json({ success: true, message: "Privacy updated successfully" });
+    }
     return res.redirect("/settings?success_msg=Privacy updated successfully");
   } catch (err) {
     console.error("Error updating privacy:", err);
+    if (req.isXhr) return res.status(500).json({ success: false, error: "Failed to update privacy" });
     return res.redirect("/settings?error_msg=Failed to update privacy");
   }
 });
