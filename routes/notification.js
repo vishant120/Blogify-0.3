@@ -1,3 +1,4 @@
+// routes/notification.js
 const { Router } = require("express");
 const Notification = require("../models/notification");
 const User = require("../models/user");
@@ -58,6 +59,17 @@ router.post("/accept/:id", async (req, res) => {
       Notification.findByIdAndUpdate(req.params.id, { status: "ACCEPTED" }, { new: true }),
     ]);
 
+    const acceptNotification = await Notification.create({
+      recipient: notification.sender,
+      sender: req.user._id,
+      type: "FOLLOW_ACCEPTED",
+      message: `${req.user.fullname} accepted your follow request`,
+      status: "UNREAD",
+    });
+
+    req.app.io.to(notification.sender.toString()).emit('newNotification', acceptNotification.toJSON());
+    req.app.io.to(notification.sender.toString()).emit('followAccepted', { followerId: req.user._id.toString() });
+
     return res.redirect("/notification?success_msg=Follow request accepted");
   } catch (err) {
     console.error("Error accepting follow request:", err);
@@ -82,6 +94,17 @@ router.post("/reject/:id", async (req, res) => {
     }
 
     await Notification.findByIdAndUpdate(req.params.id, { status: "REJECTED" }, { new: true });
+
+    const rejectNotification = await Notification.create({
+      recipient: notification.sender,
+      sender: req.user._id,
+      type: "FOLLOW_REJECTED",
+      message: `${req.user.fullname} rejected your follow request`,
+      status: "UNREAD",
+    });
+
+    req.app.io.to(notification.sender.toString()).emit('newNotification', rejectNotification.toJSON());
+
     return res.redirect("/notification?success_msg=Follow request rejected");
   } catch (err) {
     console.error("Error rejecting follow request:", err);
