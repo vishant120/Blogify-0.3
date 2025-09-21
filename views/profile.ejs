@@ -4,83 +4,27 @@
   <%- include('./partials/head') %>
   <title><%= profileUser.fullname %>'s Profile</title>
   <style>
-    /* 3-Dot Menu Styles */
-    .blog-card {
-      position: relative;
-    }
-    .options-menu {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-    }
-    .options-button {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-    .dropdown-menu {
-      display: none;
-      position: absolute;
-      right: 0;
-      background-color: #f9f9f9;
-      min-width: 160px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      z-index: 1;
-    }
-    .dropdown-menu a, .dropdown-menu button {
-      color: black;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: block;
-      width: 100%;
-      text-align: left;
-      border: none;
-      background: none;
-    }
-    .dropdown-menu a:hover, .dropdown-menu button:hover {
-      background-color: #f1f1f1;
-    }
-    .show {
-      display: block;
-    }
-    .comment-actions {
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity 0.2s ease-in-out;
-    }
-    .comment-container:hover .comment-actions {
-      visibility: visible;
-      opacity: 1;
-    }
+    .blog-card { position: relative; }
+    .options-menu { position: absolute; top: 1rem; right: 1rem; }
+    .options-button { background: none; border: none; font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0 0.5rem; }
+    .dropdown-menu { display: none; position: absolute; right: 0; background-color: #fff; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 0.375rem; }
+    .dropdown-menu a, .dropdown-menu button { color: black; padding: 12px 16px; text-decoration: none; display: block; width: 100%; text-align: left; border: none; background: none; }
+    .dropdown-menu a:hover, .dropdown-menu button:hover { background-color: #f1f1f1; }
+    .show { display: block; }
+    .comment-actions { visibility: hidden; opacity: 0; transition: opacity 0.2s; }
+    .comment-container:hover .comment-actions { visibility: visible; opacity: 1; }
   </style>
 </head>
 <body>
   <%- include('./partials/nav') %>
 
   <div class="container mt-4">
-    <div class="d-flex align-items-center mb-4">
-      <img src="<%= profileUser.profileImageURL %>" alt="<%= profileUser.fullname %>" class="rounded-circle me-3" width="150" height="150">
-      <div>
-        <h3><%= profileUser.fullname %></h3>
-        <p><%= profileUser.email %></p>
-        <p><%= profileUser.bio %></p>
-        <div class="d-flex">
-          <div class="me-3"><strong><%= profileUser.followers.length %></strong> Followers</div>
-          <div><strong><%= profileUser.following.length %></strong> Following</div>
-        </div>
-      </div>
-    </div>
-    
-    <hr>
-    
     <h4>Blogs by <%= profileUser.fullname %></h4>
-
+    <hr>
     <% if (blogs && blogs.length > 0) { %>
       <% blogs.forEach(blog => { %>
         <div class="card mb-3 blog-card">
           <div class="card-body">
-
             <div class="options-menu">
               <button class="options-button" onclick="toggleMenu('<%= blog._id %>')">⋮</button>
               <div id="dropdown-<%= blog._id %>" class="dropdown-menu">
@@ -92,25 +36,16 @@
                 <% } %>
               </div>
             </div>
-
             <h5 class="card-title"><%= blog.title %></h5>
             <p class="card-text"><%= blog.body %></p>
-            <% if (blog.coverImageURL) { %>
-              <img src="<%= blog.coverImageURL %>" class="img-fluid rounded mb-2" alt="Cover Image">
-            <% } %>
-            <p class="card-text"><small class="text-muted">Created <%= moment(blog.createdAt).fromNow() %></small></p>
-
-            <h6>Comments (<%= blog.comments.length %>)</h6>
+            <h6>Comments</h6>
             <% blog.comments.forEach(comment => { %>
               <div class="comment-container border-start border-2 ps-2 mb-2">
                 <strong><%= comment.createdBy.fullname %>:</strong>
                 <span><%= comment.content %></span>
-                
                 <% if (user && user._id.equals(blog.createdBy._id)) { %>
                   <form action="/comment/<%= comment._id %>?_method=DELETE" method="POST" class="d-inline comment-actions">
-                    <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1" title="Delete Comment">
-                      &times;
-                    </button>
+                    <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1" title="Delete Comment">&times;</button>
                   </form>
                 <% } %>
               </div>
@@ -125,43 +60,18 @@
 
   <%- include('./partials/scripts') %>
   <script>
-    // Toggle 3-dot menu
-    function toggleMenu(blogId) {
-      document.getElementById(`dropdown-${blogId}`).classList.toggle("show");
-    }
-
-    // Close dropdown if clicked outside
+    function toggleMenu(blogId) { document.getElementById(`dropdown-${blogId}`).classList.toggle("show"); }
     window.onclick = function(event) {
       if (!event.target.matches('.options-button')) {
-        var dropdowns = document.getElementsByClassName("dropdown-menu");
-        for (var i = 0; i < dropdowns.length; i++) {
-          var openDropdown = dropdowns[i];
-          if (openDropdown.classList.contains('show')) {
-            openDropdown.classList.remove('show');
-          }
-        }
+        document.querySelectorAll('.dropdown-menu.show').forEach(menu => menu.classList.remove('show'));
       }
     }
-
-    // Share blog function
     async function shareBlog(blogId, title) {
-      const shareData = {
-        title: title,
-        text: `Check out this blog post: "${title}"`,
-        url: `${window.location.origin}/blog/${blogId}`
-      };
+      const shareData = { title: title, text: `Check out: "${title}"`, url: `${window.location.origin}/blog/${blogId}` };
       try {
-        if (navigator.share) {
-          await navigator.share(shareData);
-        } else {
-          // Fallback for browsers that don't support Web Share API
-          await navigator.clipboard.writeText(shareData.url);
-          alert('Blog link copied to clipboard!');
-        }
-      } catch (err) {
-        console.error("Error sharing:", err);
-        alert('Could not share the blog.');
-      }
+        if (navigator.share) await navigator.share(shareData);
+        else { await navigator.clipboard.writeText(shareData.url); alert('Link copied!'); }
+      } catch (err) { console.error("Error sharing:", err); }
     }
   </script>
 </body>
