@@ -857,7 +857,10 @@
                 <a href="/profile/<%= follower._id %>"><%= follower.fullname %></a>
               </div>
               <% if (user && follower._id.toString() !== user._id.toString()) { %>
-                <% const followerStatus = user.following.some(f => f.toString() === follower._id.toString()) ? 'following' : 'follow'; %>
+                <% let followerStatus = 'follow'; %>
+                <% if (user.following) { %>
+                  <% followerStatus = user.following.some(f => f.toString() === follower._id.toString()) ? 'following' : 'follow'; %>
+                <% } %>
                 <form action="/user/<%= followerStatus === 'following' ? 'unfollow' : 'follow' %>/<%= follower._id %>" method="POST" style="display:inline;">
                   <button class="follow-btn <%= followerStatus === 'following' ? 'following' : '' %>" type="submit">
                     <i class="fas <%= followerStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
@@ -884,9 +887,14 @@
                 <a href="/profile/<%= followingUser._id %>"><%= followingUser.fullname %></a>
               </div>
               <% if (user && followingUser._id.toString() !== user._id.toString()) { %>
-                <form action="/user/unfollow/<%= followingUser._id %>" method="POST" style="display:inline;">
-                  <button class="follow-btn following" type="submit">
-                    <i class="fas fa-user-minus"></i> Unfollow
+                <% let followStatus = 'follow'; %>
+                <% if (user.following) { %>
+                  <% followStatus = user.following.some(f => f.toString() === followingUser._id.toString()) ? 'following' : 'follow'; %>
+                <% } %>
+                <form action="/user/<%= followStatus === 'following' ? 'unfollow' : 'follow' %>/<%= followingUser._id %>" method="POST" style="display:inline;">
+                  <button class="follow-btn <%= followStatus === 'following' ? 'following' : '' %>" type="submit">
+                    <i class="fas <%= followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
+                    <%= followStatus === 'following' ? 'Unfollow' : 'Follow' %>
                   </button>
                 </form>
               <% } %>
@@ -909,7 +917,10 @@
                 <a href="/profile/<%= common._id %>"><%= common.fullname %></a>
               </div>
               <% if (user && common._id.toString() !== user._id.toString()) { %>
-                <% const commonStatus = user.following.some(f => f.toString() === common._id.toString()) ? 'following' : 'follow'; %>
+                <% let commonStatus = 'follow'; %>
+                <% if (user.following) { %>
+                  <% commonStatus = user.following.some(f => f.toString() === common._id.toString()) ? 'following' : 'follow'; %>
+                <% } %>
                 <form action="/user/<%= commonStatus === 'following' ? 'unfollow' : 'follow' %>/<%= common._id %>" method="POST" style="display:inline;">
                   <button class="follow-btn <%= commonStatus === 'following' ? 'following' : '' %>" type="submit">
                     <i class="fas <%= commonStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
