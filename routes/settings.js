@@ -1,4 +1,3 @@
-// routes/settings.js (updated with update-privacy)
 const { Router } = require("express");
 const { randomBytes, createHmac } = require("crypto");
 const User = require("../models/user");
@@ -64,7 +63,7 @@ router.post("/update-profile", cloudinaryUpload.single("profileImage"), async (r
   }
 });
 
-// POST /settings/update-privacy (new)
+// POST /settings/update-privacy (fixed boolean check)
 router.post("/update-privacy", async (req, res) => {
   try {
     if (!req.user) {
@@ -72,7 +71,7 @@ router.post("/update-privacy", async (req, res) => {
     }
 
     const { isPrivate } = req.body;
-    const update = { isPrivate: isPrivate === 'true' };
+    const update = { isPrivate: !!isPrivate }; // Fixed: handles boolean/true string
 
     const updatedUser = await User.findByIdAndUpdate(req.user._id, update, { new: true });
     if (!updatedUser) return res.redirect("/settings?error_msg=User not found");
