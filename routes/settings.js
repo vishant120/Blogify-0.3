@@ -1,5 +1,6 @@
+require('dotenv').config();
 const { Router } = require("express");
-const { randomBytes, createHmac } = require("crypto");
+const { randomBytes } = require("crypto");
 const User = require("../models/user");
 const Blog = require("../models/blog");
 const Comment = require("../models/comments");
@@ -89,8 +90,8 @@ router.post("/update-privacy", async (req, res) => {
     return res.redirect("/settings?success_msg=Privacy updated successfully");
   } catch (err) {
     console.error("Error updating privacy:", err);
-    if (req.isXhr) return res.status(500).json({ success: false, error: "Failed to update privacy" });
-    return res.redirect("/settings?error_msg=Failed to update privacy");
+    if (req.isXhr) return res.status(500).json({ success: false, error: err.message || "Failed to update privacy (server error - check logs)" });
+    return res.redirect("/settings?error_msg=Failed to update privacy (server error - check logs)");
   }
 });
 
