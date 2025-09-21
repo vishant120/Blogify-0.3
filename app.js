@@ -1,4 +1,3 @@
-// app.js
 require('dotenv').config();
 const express = require("express");
 const http = require('http');
@@ -218,6 +217,8 @@ app.get("/search", async (req, res) => {
     if (queryStr) {
       const User = require("./models/user");
       const Blog = require("./models/blog");
+      const Comment = require("./models/comments");
+      const Notification = require("./models/notification");
 
       users = await User.find({
         $or: [
@@ -228,17 +229,37 @@ app.get("/search", async (req, res) => {
         .populate("followers", "fullname profileImageURL")
         .sort({ fullname: 1 });
 
-      // Fetch matching blogs, populate, then filter visibility (fix for invalid query)
-      blogs = await Blog.find({
+      const currentUser = req.user ? await User.findById(req.user._id).populate("following", "fullname profileImageURL _id") : null;
+
+      const usersWithStatus = await Promise.all(
+        users.map(async (u) => {
+          const isOwn = req.user ? u._id.equals(req.user._id) : false;
+          const isFollowing = req.user ? u.followers.some((f) => f.equals(req.user._id)) : false;
+          const pendingRequest = req.user
+            ? await Notification.findOne({
+                sender: req.user._id,
+                recipient: u._id,
+                type: "FOLLOW_REQUEST",
+                status: "PENDING",
+              })
+            : null;
+          const followStatus = isOwn ? "own" : isFollowing ? "following" : pendingRequest ? "requested" : "follow";
+          return { ...u._doc, isOwn, followStatus };
+        })
+      );
+
+      // Fetch matching blogs, populate, then filter visibility
+      let allBlogs = await Blog.find({
         $or: [
           { title: { $regex: queryStr, $options: "i" } },
           { body: { $regex: queryStr, $options: "i" } },
         ],
       })
         .populate("createdBy", "fullname profileImageURL followers isPrivate")
+        .populate("likes", "fullname profileImageURL")
         .sort({ createdAt: -1 });
 
-      blogs = blogs.filter(blog => {
+      allBlogs = allBlogs.filter(blog => {
         const cb = blog.createdBy;
         if (!req.user) {
           return !cb.isPrivate;
@@ -247,17 +268,85 @@ app.get("/search", async (req, res) => {
           cb._id.equals(req.user._id) ||
           (cb.isPrivate && cb.followers?.some(f => f.equals(req.user._id)));
       });
-    }
 
-    res.render("search", {
-      user: req.user || null,
-      currentUser: req.user || null,
-      users,
-      blogs,
-      query: queryStr,
-      success_msg: req.query.success_msg || null,
-      error_msg: req.query.error_msg || null,
-    });
+      const blogsWithComments = await Promise.all(
+        allBlogs.map(async (blog) => {
+          const comments = await Comment.find({ blogId: blog._id, parent: null })
+            .populate("createdBy", "fullname profileImageURL")
+            .populate("likes", "fullname profileImageURL")
+            .sort({ createdAt: -1 });
+
+          const replyIds = comments.map(c => c._id);
+          const replies = await Comment.find({ parent: { $in: replyIds } })
+            .populate("createdBy", "fullname profileImageURL")
+            .populate("likes", "fullname profileImageURL")
+            .sort({ createdAt: -1 });
+
+          comments.forEach(comment => {
+            comment.replies = replies.filter(r => r.parent.toString() === comment._id.toString());
+          });
+
+          const totalComments = comments.length + replies.length;
+
+          const isFollowing = req.user
+            ? blog.createdBy.followers?.some((follower) => follower.equals(req.user._id)) || false
+            : false;
+          const isOwn = req.user ? blog.createdBy._id.equals(req.user._id) : false;
+          const pendingRequest = req.user
+            ? await Notification.findOne({
+                sender: req.user._id,
+                recipient: blog.createdBy._id,
+                type: "FOLLOW_REQUEST",
+                status: "PENDING",
+              })
+            : null;
+          const followStatus = isOwn ? "own" : isFollowing ? "following" : pendingRequest ? "requested" : "follow";
+
+          let likesWithStatus = blog.likes.map(liker => ({
+            ...liker._doc,
+            followStatus: isOwn ? "own" : "follow" // Default
+          }));
+          if (currentUser) {
+            likesWithStatus = await Promise.all(blog.likes.map(async (liker) => {
+              if (liker._id.equals(currentUser._id)) {
+                return { ...liker._doc, followStatus: "own" };
+              }
+              const isFollowingLiker = currentUser.following?.some(f => f._id.equals(liker._id)) || false;
+              const pendingRequestLiker = await Notification.findOne({
+                sender: currentUser._id,
+                recipient: liker._id,
+                type: "FOLLOW_REQUEST",
+                status: "PENDING",
+              });
+              const followStatusLiker = isFollowingLiker ? "following" : pendingRequestLiker ? "requested" : "follow";
+              return { ...liker._doc, followStatus: followStatusLiker };
+            }));
+          }
+
+          return { ...blog._doc, comments, totalComments, isFollowing, isOwn, followStatus, likes: likesWithStatus };
+        })
+      );
+
+      res.render("search", {
+        user: req.user || null,
+        currentUser: req.user || null,
+        users: usersWithStatus,
+        blogs: blogsWithComments,
+        query: queryStr,
+        success_msg: req.query.success_msg || null,
+        error_msg: req.query.error_msg || null,
+      });
+    } else {
+      res.render("search", {
+        user: req.user || null,
+        currentUser: req.user || null,
+        users: [],
+        blogs: [],
+        query: queryStr,
+        success_msg: req.query.success_msg || null,
+        error_msg: req.query.error_msg || null,
+      });
+    }
   } catch (err) {
     console.error("Error in search:", err);
     renderWithError(res, "search", { user: req.user || null, currentUser: req.user || null, users: [], blogs: [], query: "" }, "Failed to load search results");
