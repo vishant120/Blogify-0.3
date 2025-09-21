@@ -5,50 +5,13 @@
   <title>Settings - Blogify</title>
   <style>
     /* New Toggle Switch Styles */
-    .switch-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 60px;
-      height: 34px;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      border-radius: 34px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 26px;
-      width: 26px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-    input:checked + .slider {
-      background-color: #2196F3;
-    }
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
+    .switch-container { display: flex; align-items: center; justify-content: space-between; }
+    .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #0d6efd; }
+    input:checked + .slider:before { transform: translateX(26px); }
   </style>
 </head>
 <body>
@@ -56,44 +19,16 @@
 
   <div class="container mt-5">
     <h2 class="mb-4">Account Settings</h2>
-
     <%- include('./partials/messages') %>
 
     <div class="card mb-4">
-      <div class="card-header">
-        Update Profile Information
-      </div>
-      <div class="card-body">
-        <form action="/settings/update-profile" method="POST" enctype="multipart/form-data">
-          <div class="mb-3">
-            <label for="fullname" class="form-label">Full Name</label>
-            <input type="text" class="form-control" id="fullname" name="fullname" value="<%= user.fullname %>">
-          </div>
-          <div class="mb-3">
-            <label for="bio" class="form-label">Bio</label>
-            <textarea class="form-control" id="bio" name="bio" rows="3"><%= user.bio %></textarea>
-          </div>
-          <div class="mb-3">
-            <label for="profileImage" class="form-label">Profile Image</label>
-            <input type="file" class="form-control" id="profileImage" name="profileImage">
-          </div>
-          <button type="submit" class="btn btn-primary">Save Profile Changes</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="card mb-4">
-      <div class="card-header">
-        Account Privacy
-      </div>
+      <div class="card-header">Account Privacy</div>
       <div class="card-body">
         <form id="privacyForm" action="/settings/update-privacy" method="POST">
           <div class="switch-container">
             <div>
               <strong>Private Account</strong>
-              <p class="text-muted small">
-                If your account is private, only people you approve can see your blogs.
-              </p>
+              <p class="text-muted small mb-0">If your account is private, only people you approve can see your blogs.</p>
             </div>
             <label class="switch">
               <input 
@@ -101,15 +36,13 @@
                 name="isPrivate" 
                 id="isPrivateSwitch"
                 <%= user.isPrivate ? 'checked' : '' %>
-                onchange="document.getElementById('privacyForm').submit()"
-              >
+                onchange="document.getElementById('privacyForm').submit()">
               <span class="slider"></span>
             </label>
           </div>
         </form>
       </div>
     </div>
-    
   </div>
 
   <%- include('./partials/scripts') %>
