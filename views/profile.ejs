@@ -1,3 +1,4 @@
+<!-- views/profile.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +7,7 @@
   <title>Profile | Blogifyer</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <style>
     :root {
       --primary-color: #1abc9c;
@@ -59,7 +61,7 @@
     }
     .blogs-list {
       display: grid;
-      grid-template-columns: repeat(1, minmax(350px, 1fr));
+      grid-template-columns: repeat(1, minmax(350px, minmax(350px, 1fr)));
       gap: 2rem;
     }
     .blog-card {
@@ -597,22 +599,14 @@
               </div>
             <% } %>
           </div>
-          <div class="profile-actions">
+          <div class="profile-actions" id="profile-actions">
             <% if (user && profileUser._id.toString() !== user._id.toString()) { %>
-              <% if (followStatus === 'requested') { %>
-                <form action="/user/cancel-follow/<%= profileUser._id %>" method="POST" style="display:inline;">
-                  <button class="follow-btn cancel" type="submit">
-                    <i class="fas fa-user-times"></i> Cancel Request
-                  </button>
-                </form>
-              <% } else { %>
-                <form action="<%= followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= profileUser._id %>" method="POST" style="display:inline;">
-                  <button class="follow-btn <%= followStatus === 'following' ? 'following' : '' %>" type="submit">
-                    <i class="fas <%= followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
-                    <%= followStatus === 'following' ? 'Unfollow' : 'Follow' %>
-                  </button>
-                </form>
-              <% } %>
+              <form id="follow-form" action="<%= followStatus === 'following' ? '/user/unfollow/' : followStatus === 'requested' ? '/user/cancel-follow/' : '/user/follow/' %><%= profileUser._id %>" method="POST" style="display:inline;">
+                <button class="follow-btn <%= followStatus === 'following' ? 'following' : followStatus === 'requested' ? 'requested cancel' : '' %>" type="submit">
+                  <i class="fas <%= followStatus === 'following' ? 'fa-user-minus' : followStatus === 'requested' ? 'fa-user-times' : 'fa-user-plus' %>"></i>
+                  <%= followStatus === 'following' ? 'Unfollow' : followStatus === 'requested' ? 'Cancel Request' : 'Follow' %>
+                </button>
+              </form>
             <% } else if (user) { %>
               <a href="/settings" class="action-btn profile-btn">
                 <i class="fas fa-cog"></i> Edit Profile
@@ -859,7 +853,7 @@
               <% if (user && follower._id.toString() !== user._id.toString()) { %>
                 <% let followerStatus = 'follow'; %>
                 <% if (user.following) { %>
-                  <% followerStatus = user.following.some(f => f.toString() === follower._id.toString()) ? 'following' : 'follow'; %>
+                  <% followerStatus = user.following.some(f => f._id.toString() === follower._id.toString()) ? 'following' : 'follow'; %>
                 <% } %>
                 <form action="/user/<%= followerStatus === 'following' ? 'unfollow' : 'follow' %>/<%= follower._id %>" method="POST" style="display:inline;">
                   <button class="follow-btn <%= followerStatus === 'following' ? 'following' : '' %>" type="submit">
@@ -889,7 +883,7 @@
               <% if (user && followingUser._id.toString() !== user._id.toString()) { %>
                 <% let followStatus = 'follow'; %>
                 <% if (user.following) { %>
-                  <% followStatus = user.following.some(f => f.toString() === followingUser._id.toString()) ? 'following' : 'follow'; %>
+                  <% followStatus = user.following.some(f => f._id.toString() === followingUser._id.toString()) ? 'following' : 'follow'; %>
                 <% } %>
                 <form action="/user/<%= followStatus === 'following' ? 'unfollow' : 'follow' %>/<%= followingUser._id %>" method="POST" style="display:inline;">
                   <button class="follow-btn <%= followStatus === 'following' ? 'following' : '' %>" type="submit">
@@ -919,7 +913,7 @@
               <% if (user && common._id.toString() !== user._id.toString()) { %>
                 <% let commonStatus = 'follow'; %>
                 <% if (user.following) { %>
-                  <% commonStatus = user.following.some(f => f.toString() === common._id.toString()) ? 'following' : 'follow'; %>
+                  <% commonStatus = user.following.some(f => f._id.toString() === common._id.toString()) ? 'following' : 'follow'; %>
                 <% } %>
                 <form action="/user/<%= commonStatus === 'following' ? 'unfollow' : 'follow' %>/<%= common._id %>" method="POST" style="display:inline;">
                   <button class="follow-btn <%= commonStatus === 'following' ? 'following' : '' %>" type="submit">
@@ -937,6 +931,27 @@
     <% } %>
   </div>
   <script>
+    const socket = io();
+    const currentProfileId = '<%= profileUser ? profileUser._id : "" %>';
+
+    socket.on('followAccepted', (data) => {
+      if (currentProfileId === data.followerId) {
+        const form = document.getElementById('follow-form');
+        if (form) {
+          form.action = `/user/unfollow/${currentProfileId}`;
+          const btn = form.querySelector('button');
+          btn.classList.remove('requested', 'cancel');
+          btn.classList.add('following');
+          btn.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
+        }
+      }
+    });
+
+    socket.on('newNotification', (notification) => {
+      // Optional: show toast or update count
+    });
+
+    // Rest of the script remains the same
     let currentBlogId = null;
 
     function toggleMenu(id) {
