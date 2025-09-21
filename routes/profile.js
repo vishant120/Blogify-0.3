@@ -1,3 +1,4 @@
+// routes/profile.js
 const { Router } = require("express");
 const fs = require("fs").promises;
 const { randomBytes, createHmac } = require("crypto");
@@ -40,6 +41,11 @@ router.get("/", async (req, res) => {
         populate: { path: "createdBy", select: "fullname profileImageURL" },
       });
 
+    const currentUser = req.user ? await User.findById(req.user._id)
+      .populate("followers", "fullname profileImageURL _id")
+      .populate("following", "fullname profileImageURL _id")
+    : null;
+
     const allBlogs = await Blog.find({ createdBy: req.user._id })
       .populate("createdBy", "fullname profileImageURL")
       .populate("likes", "fullname profileImageURL")
@@ -64,15 +70,18 @@ router.get("/", async (req, res) => {
 
         const totalComments = comments.length + replies.length;
 
-        let likesWithStatus = blog.likes;
-        if (req.user) {
+        let likesWithStatus = blog.likes.map(liker => ({
+          ...liker._doc,
+          followStatus: "follow" // Default
+        }));
+        if (currentUser) {
           likesWithStatus = await Promise.all(blog.likes.map(async (liker) => {
-            if (liker._id.equals(req.user._id)) {
+            if (liker._id.equals(currentUser._id)) {
               return { ...liker._doc, followStatus: "own" };
             }
-            const isFollowingLiker = req.user.following.some(f => f.equals(liker._id));
+            const isFollowingLiker = currentUser.following?.some(f => f._id.equals(liker._id)) || false;
             const pendingRequestLiker = await Notification.findOne({
-              sender: req.user._id,
+              sender: currentUser._id,
               recipient: liker._id,
               type: "FOLLOW_REQUEST",
               status: "PENDING",
@@ -99,9 +108,7 @@ router.get("/", async (req, res) => {
 // GET /profile/:id (other user's profile)
 router.get("/:id", async (req, res) => {
   try {
-    console.log("Profile route hit for ID:", req.params.id); // Debug log
     if (!mongoose.isValidObjectId(req.params.id)) {
-      console.log("Invalid ObjectId:", req.params.id);
       return renderProfile(res, req.user, null, [], false, "follow", [], { error_msg: "Invalid user ID" });
     }
 
@@ -114,13 +121,12 @@ router.get("/:id", async (req, res) => {
       });
 
     if (!profileUser) {
-      console.log("User not found for ID:", req.params.id);
       return renderProfile(res, req.user, null, [], false, "follow", [], { error_msg: "User not found" });
     }
 
     const isOwn = req.user ? profileUser._id.equals(req.user._id) : false;
-    const isFollowing = req.user
-      ? profileUser.followers.some((follower) => follower._id.equals(req.user._id))
+    const isFollowing = req.user 
+      ? profileUser.followers?.some((follower) => follower._id.equals(req.user._id)) || false 
       : false;
 
     let allBlogs = [];
@@ -130,6 +136,11 @@ router.get("/:id", async (req, res) => {
         .populate("likes", "fullname profileImageURL")
         .sort({ createdAt: -1 });
     }
+
+    const currentUser = req.user ? await User.findById(req.user._id)
+      .populate("followers", "fullname profileImageURL _id")
+      .populate("following", "fullname profileImageURL _id")
+    : null;
 
     const blogsWithComments = await Promise.all(
       allBlogs.map(async (blog) => {
@@ -150,15 +161,18 @@ router.get("/:id", async (req, res) => {
 
         const totalComments = comments.length + replies.length;
 
-        let likesWithStatus = blog.likes;
-        if (req.user) {
+        let likesWithStatus = blog.likes.map(liker => ({
+          ...liker._doc,
+          followStatus: "follow" // Default
+        }));
+        if (currentUser) {
           likesWithStatus = await Promise.all(blog.likes.map(async (liker) => {
-            if (liker._id.equals(req.user._id)) {
+            if (liker._id.equals(currentUser._id)) {
               return { ...liker._doc, followStatus: "own" };
             }
-            const isFollowingLiker = req.user.following.some(f => f.equals(liker._id));
+            const isFollowingLiker = currentUser.following?.some(f => f._id.equals(liker._id)) || false;
             const pendingRequestLiker = await Notification.findOne({
-              sender: req.user._id,
+              sender: currentUser._id,
               recipient: liker._id,
               type: "FOLLOW_REQUEST",
               status: "PENDING",
@@ -183,13 +197,9 @@ router.get("/:id", async (req, res) => {
       });
       followStatus = isFollowing ? "following" : pending ? "requested" : "follow";
 
-      const currentUser = await User.findById(req.user._id).populate(
-        "followers",
-        "fullname profileImageURL _id"
-      );
-      commonFollowers = profileUser.followers.filter((f) =>
-        currentUser.followers.some((cf) => cf._id.equals(f._id))
-      );
+      commonFollowers = profileUser.followers?.filter((f) =>
+        currentUser.followers?.some((cf) => cf._id.equals(f._id)) || false
+      ) || [];
     }
 
     renderProfile(res, req.user, profileUser, blogsWithComments, isFollowing, followStatus, commonFollowers, {
