@@ -12,6 +12,20 @@ router.post("/:blogId", async (req, res) => {
       if (req.isXhr) return res.status(401).json({ success: false, error: "Please log in to add a comment" });
       return res.redirect(`/blog/${req.params.blogId}?error_msg=Please log in to add a comment`);
     }
+
+    const blog = await Blog.findById(req.params.blogId).populate("createdBy", "fullname isPrivate followers _id");
+    if (!blog) {
+      if (req.isXhr) return res.status(404).json({ success: false, error: "Blog not found" });
+      return res.redirect(`/?error_msg=Blog not found`);
+    }
+
+    const cb = blog.createdBy;
+    const canView = !cb.isPrivate || cb._id.equals(req.user._id) || cb.followers.some(f => f.equals(req.user._id));
+    if (!canView) {
+      if (req.isXhr) return res.status(403).json({ success: false, error: "This blog is private" });
+      return res.redirect(`/blog/${req.params.blogId}?error_msg=This blog is private`);
+    }
+
     const comment = await Comment.create({
       content: req.body.content,
       blogId: req.params.blogId,
@@ -19,10 +33,9 @@ router.post("/:blogId", async (req, res) => {
       likes: [],
     });
 
-    const blog = await Blog.findById(req.params.blogId);
-    if (blog && !blog.createdBy.equals(req.user._id)) {
+    if (blog && !blog.createdBy._id.equals(req.user._id)) {
       await Notification.create({
-        recipient: blog.createdBy,
+        recipient: blog.createdBy._id,
         sender: req.user._id,
         type: "COMMENT",
         blogId: blog._id,
@@ -58,6 +71,20 @@ router.post("/reply/:parentId", async (req, res) => {
       if (req.isXhr) return res.status(404).json({ success: false, error: "Parent comment not found" });
       return res.redirect(`/blog/${req.query.blogId || ''}?error_msg=Parent comment not found`);
     }
+
+    const blog = await Blog.findById(parent.blogId).populate("createdBy", "fullname isPrivate followers _id");
+    if (!blog) {
+      if (req.isXhr) return res.status(404).json({ success: false, error: "Blog not found" });
+      return res.redirect(`/?error_msg=Blog not found`);
+    }
+
+    const cb = blog.createdBy;
+    const canView = !cb.isPrivate || cb._id.equals(req.user._id) || cb.followers.some(f => f.equals(req.user._id));
+    if (!canView) {
+      if (req.isXhr) return res.status(403).json({ success: false, error: "This blog is private" });
+      return res.redirect(`/blog/${parent.blogId}?error_msg=This blog is private`);
+    }
+
     const reply = await Comment.create({
       content: req.body.content,
       blogId: parent.blogId,
@@ -95,15 +122,31 @@ router.post("/reply/:parentId", async (req, res) => {
 // DELETE /comment/:commentId
 router.delete("/:commentId", async (req, res) => {
   try {
-    const comment = await Comment.findById(req.params.commentId);
+    const comment = await Comment.findById(req.params.commentId).populate({
+      path: "blogId",
+      populate: {
+        path: "createdBy",
+        select: "fullname isPrivate followers _id"
+      }
+    });
     if (!comment) {
       if (req.isXhr) return res.status(404).json({ success: false, error: "Comment not found" });
       return res.redirect(`/blog/${req.query.blogId || ''}?error_msg=Comment not found`);
     }
-    if (!req.user || comment.createdBy.toString() !== req.user._id.toString()) {
+
+    const blog = comment.blogId;
+    const cb = blog.createdBy;
+    const canView = !cb.isPrivate || (req.user && (cb._id.equals(req.user._id) || cb.followers.some(f => f.equals(req.user._id))));
+    if (!canView) {
+      if (req.isXhr) return res.status(403).json({ success: false, error: "This blog is private" });
+      return res.redirect(`/blog/${blog._id}?error_msg=This blog is private`);
+    }
+
+    if (!req.user || !comment.createdBy.equals(req.user._id)) {
       if (req.isXhr) return res.status(403).json({ success: false, error: "Unauthorized" });
       return res.redirect(`/blog/${comment.blogId}?error_msg=Unauthorized to delete this comment`);
     }
+
     await Comment.findByIdAndDelete(req.params.commentId);
     if (req.isXhr) return res.json({ success: true });
     return res.redirect(`/blog/${comment.blogId}?success_msg=Comment deleted successfully`);
@@ -121,15 +164,32 @@ router.post("/:commentId/like", async (req, res) => {
       if (req.isXhr) return res.status(401).json({ success: false, error: "Please log in to like a comment" });
       return res.redirect(`/blog/${req.query.blogId || ''}?error_msg=Please log in to like a comment`);
     }
-    const comment = await Comment.findById(req.params.commentId);
+
+    const comment = await Comment.findById(req.params.commentId).populate({
+      path: "blogId",
+      populate: {
+        path: "createdBy",
+        select: "fullname isPrivate followers _id"
+      }
+    });
     if (!comment) {
       if (req.isXhr) return res.status(404).json({ success: false, error: "Comment not found" });
       return res.redirect(`/blog/${req.query.blogId || ''}?error_msg=Comment not found`);
     }
+
+    const blog = comment.blogId;
+    const cb = blog.createdBy;
+    const canView = !cb.isPrivate || cb._id.equals(req.user._id) || cb.followers.some(f => f.equals(req.user._id));
+    if (!canView) {
+      if (req.isXhr) return res.status(403).json({ success: false, error: "This blog is private" });
+      return res.redirect(`/blog/${blog._id}?error_msg=This blog is private`);
+    }
+
     if (comment.likes.includes(req.user._id)) {
       if (req.isXhr) return res.status(400).json({ success: false, error: "Already liked" });
       return res.redirect(`/blog/${comment.blogId}?error_msg=You have already liked this comment`);
     }
+
     comment.likes.push(req.user._id);
     await comment.save();
     if (req.isXhr) return res.json({ success: true, likesCount: comment.likes.length });
@@ -148,15 +208,32 @@ router.delete("/:commentId/like", async (req, res) => {
       if (req.isXhr) return res.status(401).json({ success: false, error: "Please log in to unlike a comment" });
       return res.redirect(`/blog/${req.query.blogId || ''}?error_msg=Please log in to unlike a comment`);
     }
-    const comment = await Comment.findById(req.params.commentId);
+
+    const comment = await Comment.findById(req.params.commentId).populate({
+      path: "blogId",
+      populate: {
+        path: "createdBy",
+        select: "fullname isPrivate followers _id"
+      }
+    });
     if (!comment) {
       if (req.isXhr) return res.status(404).json({ success: false, error: "Comment not found" });
       return res.redirect(`/blog/${req.query.blogId || ''}?error_msg=Comment not found`);
     }
+
+    const blog = comment.blogId;
+    const cb = blog.createdBy;
+    const canView = !cb.isPrivate || cb._id.equals(req.user._id) || cb.followers.some(f => f.equals(req.user._id));
+    if (!canView) {
+      if (req.isXhr) return res.status(403).json({ success: false, error: "This blog is private" });
+      return res.redirect(`/blog/${blog._id}?error_msg=This blog is private`);
+    }
+
     if (!comment.likes.includes(req.user._id)) {
       if (req.isXhr) return res.status(400).json({ success: false, error: "Not liked" });
       return res.redirect(`/blog/${comment.blogId}?error_msg=You have not liked this comment`);
     }
+
     comment.likes = comment.likes.filter((userId) => userId.toString() !== req.user._id.toString());
     await comment.save();
     if (req.isXhr) return res.json({ success: true, likesCount: comment.likes.length });
