@@ -82,31 +82,23 @@ app.get("/", async (req, res) => {
     const Notification = require("./models/notification");
     const User = require("./models/user");
 
-    let query = {};
-    if (req.user) {
-      query = {
-        $or: [
-          { 'createdBy.isPrivate': false },
-          { createdBy: req.user._id },
-          { $and: [{ 'createdBy.isPrivate': true }, { 'createdBy.followers': req.user._id }] }
-        ]
-      };
-    } else {
-      query = { 'createdBy.isPrivate': false };
-    }
-
-    const allBlogs = await Blog.find(query)
+    // Fetch all blogs, populate, then filter in JS (fix for invalid query)
+    let allBlogs = await Blog.find({})
       .populate("createdBy", "fullname email profileImageURL followers isPrivate")
       .populate("likes", "fullname profileImageURL")
       .sort({ createdAt: -1 });
 
-    const currentUser = req.user ? await User.findById(req.user._id) : null;
+    allBlogs = allBlogs.filter(blog => {
+      const cb = blog.createdBy;
+      if (!req.user) {
+        return !cb.isPrivate;
+      }
+      return !cb.isPrivate ||
+        cb._id.equals(req.user._id) ||
+        (cb.isPrivate && cb.followers.some(f => f.equals(req.user._id)));
+    });
 
-    let currentFollowerIds = [];
-    if (req.user) {
-      const currentUserFollowers = await User.findById(req.user._id).select("followers");
-      currentFollowerIds = currentUserFollowers.followers.map(id => id.toString());
-    }
+    const currentUser = req.user ? await User.findById(req.user._id).populate("following") : null; // Populate following for likes status
 
     const blogsWithComments = await Promise.all(
       allBlogs.map(async (blog) => {
@@ -128,7 +120,7 @@ app.get("/", async (req, res) => {
         const totalComments = comments.length + replies.length;
 
         const isFollowing = req.user
-          ? blog.createdBy.followers.some((follower) => follower._id.equals(req.user._id))
+          ? blog.createdBy.followers.some((follower) => follower.equals(req.user._id))
           : false;
         const isOwn = req.user ? blog.createdBy._id.equals(req.user._id) : false;
         const pendingRequest = req.user
@@ -139,9 +131,12 @@ app.get("/", async (req, res) => {
               status: "PENDING",
             })
           : null;
-        const followStatus = isFollowing ? "following" : pendingRequest ? "requested" : "follow";
+        const followStatus = isOwn ? "own" : isFollowing ? "following" : pendingRequest ? "requested" : "follow"; // Added "own" for consistency
 
-        let likesWithStatus = blog.likes;
+        let likesWithStatus = blog.likes.map(liker => ({
+          ...liker._doc,
+          followStatus: isOwn ? "own" : "follow" // Default
+        }));
         if (currentUser) {
           likesWithStatus = await Promise.all(blog.likes.map(async (liker) => {
             if (liker._id.equals(currentUser._id)) {
@@ -166,7 +161,6 @@ app.get("/", async (req, res) => {
     res.render("home", {
       user: req.user || null,
       blogs: blogsWithComments,
-      currentFollowerIds,
       success_msg: req.query.success_msg || null,
       error_msg: req.query.error_msg || null,
     });
@@ -179,45 +173,42 @@ app.get("/", async (req, res) => {
 app.get("/search", async (req, res) => {
   try {
     const { q } = req.query;
-    const query = q ? q.trim() : "";
+    const queryStr = q ? q.trim() : "";
     let users = [];
     let blogs = [];
 
-    if (query) {
+    if (queryStr) {
       const User = require("./models/user");
       const Blog = require("./models/blog");
 
       users = await User.find({
         $or: [
-          { fullname: { $regex: query, $options: "i" } },
-          { email: { $regex: query, $options: "i" } },
+          { fullname: { $regex: queryStr, $options: "i" } },
+          { email: { $regex: queryStr, $options: "i" } },
         ],
       })
         .populate("followers", "fullname profileImageURL")
         .sort({ fullname: 1 });
 
-      let blogQuery = {
+      // Fetch matching blogs, populate, then filter visibility (fix for invalid query)
+      blogs = await Blog.find({
         $or: [
-          { title: { $regex: query, $options: "i" } },
-          { body: { $regex: query, $options: "i" } },
+          { title: { $regex: queryStr, $options: "i" } },
+          { body: { $regex: queryStr, $options: "i" } },
         ],
-      };
-
-      if (req.user) {
-        blogQuery.$and = [{
-          $or: [
-            { 'createdBy.isPrivate': false },
-            { createdBy: req.user._id },
-            { $and: [{ 'createdBy.isPrivate': true }, { 'createdBy.followers': req.user._id }] }
-          ]
-        }];
-      } else {
-        blogQuery.$and = [{ 'createdBy.isPrivate': false }];
-      }
-
-      blogs = await Blog.find(blogQuery)
-        .populate("createdBy", "fullname profileImageURL")
+      })
+        .populate("createdBy", "fullname profileImageURL followers isPrivate")
         .sort({ createdAt: -1 });
+
+      blogs = blogs.filter(blog => {
+        const cb = blog.createdBy;
+        if (!req.user) {
+          return !cb.isPrivate;
+        }
+        return !cb.isPrivate ||
+          cb._id.equals(req.user._id) ||
+          (cb.isPrivate && cb.followers.some(f => f.equals(req.user._id)));
+      });
     }
 
     res.render("search", {
@@ -225,7 +216,7 @@ app.get("/search", async (req, res) => {
       currentUser: req.user || null,
       users,
       blogs,
-      query,
+      query: queryStr,
       success_msg: req.query.success_msg || null,
       error_msg: req.query.error_msg || null,
     });
