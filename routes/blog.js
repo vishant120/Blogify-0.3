@@ -1,4 +1,3 @@
-// routes/blog.js
 const { Router } = require("express");
 const Blog = require("../models/blog");
 const Comment = require("../models/comments");
@@ -21,19 +20,54 @@ router.get("/addBlog", (req, res) =>
 router.get("/:id", async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id)
-      .populate("createdBy", "fullname email profileImageURL")
+      .populate("createdBy", "fullname email profileImageURL isPrivate followers")
       .populate("likes", "fullname profileImageURL");
-
-    const comments = await Comment.find({ blogId: req.params.id })
-      .populate("createdBy", "fullname profileImageURL")
-      .sort({ createdAt: -1 });
 
     if (!blog) return res.redirect("/?error_msg=Blog not found");
 
+    const cb = blog.createdBy;
+    const canView = !cb.isPrivate || (req.user ? cb._id.equals(req.user._id) || cb.followers.some(f => f.equals(req.user._id)) : false);
+    if (!canView) {
+      return res.redirect("/?error_msg=This blog is private");
+    }
+
+    const comments = await Comment.find({ blogId: req.params.id, parent: null })
+      .populate("createdBy", "fullname profileImageURL")
+      .populate("likes", "fullname profileImageURL")
+      .sort({ createdAt: -1 });
+
+    const replyIds = comments.map(c => c._id);
+    const replies = await Comment.find({ parent: { $in: replyIds } })
+      .populate("createdBy", "fullname profileImageURL")
+      .populate("likes", "fullname profileImageURL")
+      .sort({ createdAt: -1 });
+
+    comments.forEach(comment => {
+      comment.replies = replies.filter(r => r.parent.toString() === comment._id.toString());
+    });
+
+    const totalComments = comments.length + replies.length;
+
+    const isFollowing = req.user ? cb.followers.some(follower => follower.equals(req.user._id)) : false;
+    const isOwn = req.user ? cb._id.equals(req.user._id) : false;
+    const pendingRequest = req.user ? await Notification.findOne({ sender: req.user._id, recipient: cb._id, type: "FOLLOW_REQUEST", status: "PENDING" }) : null;
+    const followStatus = isOwn ? "own" : isFollowing ? "following" : pendingRequest ? "requested" : "follow";
+
+    let likesWithStatus = blog.likes.map(liker => ({ ...liker._doc, followStatus: "follow" }));
+    const currentUser = req.user ? await User.findById(req.user._id).populate("following", "fullname profileImageURL _id") : null;
+    if (currentUser) {
+      likesWithStatus = await Promise.all(blog.likes.map(async (liker) => {
+        if (liker._id.equals(currentUser._id)) return { ...liker._doc, followStatus: "own" };
+        const isFollowingLiker = currentUser.following?.some(f => f._id.equals(liker._id)) || false;
+        const pendingRequestLiker = await Notification.findOne({ sender: currentUser._id, recipient: liker._id, type: "FOLLOW_REQUEST", status: "PENDING" });
+        const followStatusLiker = isFollowingLiker ? "following" : pendingRequestLiker ? "requested" : "follow";
+        return { ...liker._doc, followStatus: followStatusLiker };
+      }));
+    }
+
     return res.render("blog", {
       user: req.user || null,
-      blog,
-      comments,
+      blog: { ...blog._doc, comments, totalComments, isFollowing, isOwn, followStatus, likes: likesWithStatus },
       error_msg: req.query.error_msg || null,
       success_msg: req.query.success_msg || null,
     });
@@ -88,9 +122,15 @@ router.post("/:id/like", async (req, res) => {
       return res.redirect(`/blog/${req.params.id}?error_msg=Please log in to like a blog`);
     }
 
-    const blog = await Blog.findById(req.params.id).populate("createdBy", "fullname");
+    const blog = await Blog.findById(req.params.id).populate("createdBy", "fullname isPrivate followers _id");
     if (!blog) {
       return res.redirect(`/blog/${req.params.id}?error_msg=Blog not found`);
+    }
+
+    const cb = blog.createdBy;
+    const canView = !cb.isPrivate || cb._id.equals(req.user._id) || cb.followers.some(f => f.equals(req.user._id));
+    if (!canView) {
+      return res.redirect(`/blog/${req.params.id}?error_msg=This blog is private`);
     }
 
     const user = await User.findById(req.user._id);
