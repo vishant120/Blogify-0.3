@@ -1,5 +1,8 @@
+// app.js
 require('dotenv').config();
 const express = require("express");
+const http = require('http');
+const socketIo = require("socket.io");
 const mongoose = require("mongoose");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -13,8 +16,19 @@ const commentRoute = require("./routes/comments");
 const profileRoute = require("./routes/profile");
 const notificationRoute = require("./routes/notification");
 const { checkForAuthenticationCookie } = require("./middlewares/auth");
+const { verifyToken } = require("./services/authentication");
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+app.io = io;
+
 const PORT = process.env.PORT || 8000;
 
 // Validate environment variables
@@ -46,6 +60,30 @@ mongoose
     console.error("MongoDB connection error:", err);
     process.exit(1);
   });
+
+// Socket.io authentication
+io.use((socket, next) => {
+  const cookie = socket.handshake.headers.cookie;
+  if (cookie) {
+    const tokenCookie = cookie.split('; ').find(row => row.startsWith('token='));
+    if (tokenCookie) {
+      const token = tokenCookie.split('=')[1];
+      try {
+        const userPayload = verifyToken(token);
+        socket.user = userPayload;
+        return next();
+      } catch (err) {}
+    }
+  }
+  next(new Error('Authentication error'));
+});
+
+io.on('connection', (socket) => {
+  if (socket.user) {
+    socket.join(socket.user._id.toString());
+    console.log(`User connected: ${socket.user._id}`);
+  }
+});
 
 // Middleware to detect XHR
 app.use((req, res, next) => {
@@ -95,10 +133,10 @@ app.get("/", async (req, res) => {
       }
       return !cb.isPrivate ||
         cb._id.equals(req.user._id) ||
-        (cb.isPrivate && cb.followers.some(f => f.equals(req.user._id)));
+        (cb.isPrivate && cb.followers?.some(f => f.equals(req.user._id)));
     });
 
-    const currentUser = req.user ? await User.findById(req.user._id).populate("following") : null; // Populate following for likes status
+    const currentUser = req.user ? await User.findById(req.user._id).populate("following", "fullname profileImageURL _id") : null; // Populate following for likes status
 
     const blogsWithComments = await Promise.all(
       allBlogs.map(async (blog) => {
@@ -120,7 +158,7 @@ app.get("/", async (req, res) => {
         const totalComments = comments.length + replies.length;
 
         const isFollowing = req.user
-          ? blog.createdBy.followers.some((follower) => follower.equals(req.user._id))
+          ? blog.createdBy.followers?.some((follower) => follower.equals(req.user._id)) || false
           : false;
         const isOwn = req.user ? blog.createdBy._id.equals(req.user._id) : false;
         const pendingRequest = req.user
@@ -142,7 +180,7 @@ app.get("/", async (req, res) => {
             if (liker._id.equals(currentUser._id)) {
               return { ...liker._doc, followStatus: "own" };
             }
-            const isFollowingLiker = currentUser.following.some(f => f.equals(liker._id));
+            const isFollowingLiker = currentUser.following?.some(f => f._id.equals(liker._id)) || false;
             const pendingRequestLiker = await Notification.findOne({
               sender: currentUser._id,
               recipient: liker._id,
@@ -207,7 +245,7 @@ app.get("/search", async (req, res) => {
         }
         return !cb.isPrivate ||
           cb._id.equals(req.user._id) ||
-          (cb.isPrivate && cb.followers.some(f => f.equals(req.user._id)));
+          (cb.isPrivate && cb.followers?.some(f => f.equals(req.user._id)));
       });
     }
 
@@ -250,6 +288,6 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start Server
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
 module.exports = app;
