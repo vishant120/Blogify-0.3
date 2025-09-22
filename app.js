@@ -1,3 +1,4 @@
+// app.js (or server.js - assuming this is the main file from your context)
 require('dotenv').config();
 const express = require("express");
 const http = require('http');
@@ -53,7 +54,7 @@ console.log('EMAIL_PASS:', '****'); // Mask password
 
 // MongoDB Connection
 mongoose
-  .connect(process.env.MONGODB_URI, { dbName: 'test' })
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => {
     console.error("MongoDB connection error:", err);
