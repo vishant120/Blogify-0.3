@@ -327,12 +327,10 @@
             </div>
             <div class="user-actions">
               <% if (!userItem.isOwn && currentUser) { %>
-                <form action="<%= userItem.followStatus === 'following' ? '/user/unfollow/' : userItem.followStatus === 'requested' ? '/user/cancel-follow/' : '/user/follow/' %><%= userItem._id %>" method="POST" style="display:inline;">
-                  <button class="follow-btn <%= userItem.followStatus === 'following' ? 'following' : userItem.followStatus === 'requested' ? 'requested cancel' : '' %>" type="submit">
-                    <i class="fas <%= userItem.followStatus === 'following' ? 'fa-user-minus' : userItem.followStatus === 'requested' ? 'fa-user-times' : 'fa-user-plus' %>"></i>
-                    <%= userItem.followStatus === 'following' ? 'Unfollow' : userItem.followStatus === 'requested' ? 'Cancel Request' : 'Follow' %>
-                  </button>
-                </form>
+                <button type="button" class="follow-btn ajax-follow-btn <%= userItem.followStatus === 'following' ? 'following' : userItem.followStatus === 'requested' ? 'requested cancel' : '' %>" data-user-id="<%= userItem._id %>" data-follow-status="<%= userItem.followStatus %>">
+                  <i class="fas <%= userItem.followStatus === 'following' ? 'fa-user-minus' : userItem.followStatus === 'requested' ? 'fa-user-times' : 'fa-user-plus' %>"></i>
+                  <%= userItem.followStatus === 'following' ? 'Unfollow' : userItem.followStatus === 'requested' ? 'Cancel Request' : 'Follow' %>
+                </button>
               <% } %>
             </div>
           </div>
@@ -372,27 +370,15 @@
             </div>
             <div class="blog-actions">
               <% if (user) { %>
-                <form action="/blog/<%= blog._id %>/like" method="POST" style="display:inline;">
-                  <button class="action-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" type="submit">
-                    <i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
-                    <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %>
-                  </button>
-                </form>
+                <button type="button" class="action-btn ajax-like-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-blog-id="<%= blog._id %>" data-liked="<%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'true' : 'false' %>">
+                  <i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
+                  <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %>
+                </button>
                 <% if (!blog.isOwn) { %>
-                  <% if (blog.followStatus === 'requested') { %>
-                    <form action="/user/cancel-follow/<%= blog.createdBy._id %>" method="POST" style="display:inline;">
-                      <button class="follow-btn cancel" type="submit">
-                        <i class="fas fa-user-times"></i> Cancel Request
-                      </button>
-                    </form>
-                  <% } else { %>
-                    <form action="<%= blog.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= blog.createdBy._id %>" method="POST" style="display:inline;">
-                      <button class="follow-btn <%= blog.followStatus === 'following' ? 'following' : '' %>" type="submit">
-                        <i class="fas <%= blog.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
-                        <%= blog.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
-                      </button>
-                    </form>
-                  <% } %>
+                  <button type="button" class="follow-btn ajax-follow-btn <%= blog.followStatus === 'following' ? 'following' : blog.followStatus === 'requested' ? 'requested cancel' : '' %>" data-user-id="<%= blog.createdBy._id %>" data-follow-status="<%= blog.followStatus %>">
+                    <i class="fas <%= blog.followStatus === 'following' ? 'fa-user-minus' : blog.followStatus === 'requested' ? 'fa-user-times' : 'fa-user-plus' %>"></i>
+                    <%= blog.followStatus === 'following' ? 'Unfollow' : blog.followStatus === 'requested' ? 'Cancel Request' : 'Follow' %>
+                  </button>
                 <% } %>
               <% } %>
               <div class="likes-preview" onclick="showLikes('<%= blog._id %>')">
@@ -680,74 +666,335 @@
       }
     });
 
-    // Generic handler for AJAX forms (for comments, etc.)
-    const handleFormSubmit = async (e, successCallback) => {
-      e.preventDefault();
-      const form = e.target;
-      try {
-        const formData = new FormData(form);
-        const response = await fetch(form.action, {
-          method: 'POST',
-          body: new URLSearchParams(formData),
-          headers: { 
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          successCallback(data, form);
-        } else {
-          alert('Action failed. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-      }
-    };
+    document.addEventListener('DOMContentLoaded', () => {
 
-    // Follow/Unfollow for users and blog authors
-    document.querySelectorAll('.follow-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault(); // Since it's button in form, but to handle as AJAX
-        const form = btn.closest('form');
-        if (form) {
+      // Generic handler for AJAX forms (for comments, etc.)
+      const handleFormSubmit = async (e, successCallback) => {
+        e.preventDefault();
+        const form = e.target;
+        try {
+          const formData = new FormData(form);
+          const response = await fetch(form.action, {
+            method: 'POST',
+            body: new URLSearchParams(formData),
+            headers: { 
+              'X-Requested-With': 'XMLHttpRequest',
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            successCallback(data, form);
+          } else {
+            alert('Action failed. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('An error occurred. Please try again.');
+        }
+      };
+
+      // AJAX for blog likes
+      document.querySelectorAll('.ajax-like-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const blogId = button.dataset.blogId;
+          let isLiked = button.dataset.liked === 'true';
+          const likesCountSpan = button.closest('.blog-card').querySelector('.likes-count');
+          const currentCount = parseInt(likesCountSpan.textContent.match(/\d+/)[0]);
+
           try {
-            const response = await fetch(form.action, {
+            const response = await fetch(`/blog/${blogId}/like`, {
               method: 'POST',
-              headers: { 
+              headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json' 
-              },
+                'Content-Type': 'application/json'
+              }
             });
             if (response.ok) {
               const data = await response.json();
-              const finalStatus = data.newStatus || btn.dataset.followStatus; // If server returns newStatus
-              btn.dataset.followStatus = finalStatus;
-              btn.classList.remove('following', 'requested', 'cancel');
-              const btnIcon = btn.querySelector('i');
-              if (finalStatus === 'following') {
-                btn.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
-                btn.classList.add('following');
-              } else if (finalStatus === 'requested') {
-                btn.innerHTML = '<i class="fas fa-user-times"></i> Cancel Request';
-                btn.classList.add('requested', 'cancel');
-              } else {
-                btn.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
-              }
+              isLiked = data.isLiked;
+              button.dataset.liked = isLiked ? 'true' : 'false';
+              button.classList.toggle('liked');
+              likesCountSpan.textContent = `<i class="fas fa-heart"></i> ${data.likesCount} Likes`;
+              button.innerHTML = `<i class="fas ${isLiked ? 'fa-heart' : 'fa-heart-broken'}"></i> ${isLiked ? 'Unlike' : 'Like'}`;
             } else {
-              alert('Action failed. Please try again.');
+              console.error('Failed to like blog');
             }
           } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
           }
-        }
+        });
+      });
+
+      // AJAX for follow/unfollow/cancel
+      document.querySelectorAll('.ajax-follow-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const userId = button.dataset.userId;
+          let currentStatus = button.dataset.followStatus;
+          let endpoint = '';
+          if (currentStatus === 'following') {
+            endpoint = `/user/unfollow/${userId}`;
+          } else if (currentStatus === 'requested') {
+            endpoint = `/user/cancel-follow/${userId}`;
+          } else {
+            endpoint = `/user/follow/${userId}`;
+          }
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+              }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              currentStatus = data.newStatus;
+              button.dataset.followStatus = currentStatus;
+              button.classList.remove('following', 'requested', 'cancel');
+              if (currentStatus === 'following') {
+                button.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
+                button.classList.add('following');
+              } else if (currentStatus === 'requested') {
+                button.innerHTML = '<i class="fas fa-user-times"></i> Cancel Request';
+                button.classList.add('requested', 'cancel');
+              } else {
+                button.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+              }
+            } else {
+              console.error('Failed to update follow status');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+          }
+        });
+      });
+
+      // Like a comment
+      document.querySelectorAll('.like-comment-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const commentId = button.dataset.commentId;
+          const isLiked = button.classList.contains('liked');
+          const likeCountSpan = button.querySelector('.like-count');
+
+          try {
+            const response = await fetch(`/comment/${commentId}/like`, {
+              method: isLiked ? 'DELETE' : 'POST',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              button.classList.toggle('liked');
+              likeCountSpan.textContent = data.likesCount;
+            } else {
+              console.error('Failed to like comment');
+            }
+          } catch (error) {
+            console.error('Error during fetch:', error);
+          }
+        });
+      });
+
+      // Delete a comment or reply
+      document.querySelectorAll('.delete-comment-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to delete this?')) return;
+
+          const commentId = button.dataset.commentId;
+          const commentBlock = button.closest('.comment-block');
+          const isReply = commentBlock.parentElement.classList.contains('comment-replies');
+          const repliesContainer = commentBlock.querySelector('.comment-replies');
+          const replyCount = repliesContainer ? repliesContainer.querySelectorAll('.comment-block').length : 0;
+          const deletedCount = isReply ? 1 : 1 + replyCount;
+
+          try {
+            const response = await fetch(`/comment/${commentId}`, {
+              method: 'DELETE',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              commentBlock.remove();
+
+              // Update total comments count
+              const modal = button.closest('.modal');
+              const modalId = modal.id;
+              const blogId = modalId.split('-')[1];
+              const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+              const countSpan = blogCard.querySelector('.comments-count');
+              const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
+              let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
+              currentCount -= deletedCount;
+              countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
+
+              // Check if no comments left
+              const commentsList = modal.querySelector('.comments-list');
+              if (commentsList.querySelectorAll('.comment-block').length === 0) {
+                commentsList.innerHTML = '<div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>';
+              }
+            } else {
+              alert('Failed to delete');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+          }
+        });
+      });
+
+      // Show Reply Form
+      document.querySelectorAll('.reply-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const commentBlock = e.target.closest('.comment-block');
+          const replyFormContainer = commentBlock.querySelector('.reply-form-container');
+          const commentId = button.dataset.commentId;
+
+          // Remove any existing reply forms
+          document.querySelectorAll('.comment-reply-form').forEach(form => form.remove());
+
+          const replyFormHtml = `
+            <form action="/comment/reply/${commentId}" method="POST" class="comment-reply-form">
+              <textarea name="content" required placeholder="Write a reply…" rows="2"
+                        style="width:100%; padding:.6rem; border-radius:4px; background:#2c3e50; color:#ecf0f1; border:1px solid #34495e;"></textarea>
+              <button type="submit" style="margin-top:.5rem; padding:.5rem 1rem; background:#3498db; border:none; border-radius:4px; color:#fff; cursor:pointer;">
+                Post Reply
+              </button>
+            </form>
+          `;
+          replyFormContainer.innerHTML = replyFormHtml;
+
+          // Focus on the new textarea
+          const newForm = replyFormContainer.querySelector('form');
+          if (newForm) {
+            const textarea = newForm.querySelector('textarea');
+            if (textarea) textarea.focus();
+            
+            // Add submit listener to the new form
+            newForm.addEventListener('submit', (e) => {
+              handleFormSubmit(e, (data, form) => {
+                if (data.success) {
+                  const newReply = data.newReply;
+                  const repliesContainer = form.closest('.comment-content').querySelector('.comment-replies');
+                  
+                  const replyHtml = `
+                    <div class="comment-block" data-comment-id="${newReply._id}">
+                      <img src="${newReply.createdBy.profileImageURL}" alt="Profile Image">
+                      <div class="comment-content">
+                        <div class="comment-author"><a href="/profile/${newReply.createdBy._id}" style="color:var(--primary-color);text-decoration:none;">${newReply.createdBy.fullname}</a></div>
+                        <div class="comment-text">${newReply.content}</div>
+                        <div class="comment-time"><i class="fas fa-clock"></i> Just now</div>
+                        <div class="comment-actions">
+                          <button class="comment-action-btn like-comment-btn" data-comment-id="${newReply._id}">
+                            <i class="fas fa-heart"></i>
+                            <span class="like-count">0</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="comment-menu">
+                        <button class="dots-btn" onclick="toggleCommentMenu('${newReply._id}')">
+                          <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="dropdown-menu" id="comment-menu-${newReply._id}">
+                          <button class="delete-btn delete-comment-btn" data-comment-id="${newReply._id}"><i class="fas fa-trash"></i> Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                  repliesContainer.innerHTML += replyHtml;
+                  form.remove(); // Remove the reply form after submission
+
+                  // Update total comments count
+                  const modal = form.closest('.modal');
+                  const modalId = modal.id;
+                  const blogId = modalId.split('-')[1];
+                  const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+                  const countSpan = blogCard.querySelector('.comments-count');
+                  const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
+                  let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
+                  currentCount += 1;
+                  countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
+
+                  // Update reply count
+                  const replyCountSpan = button.closest('.comment-actions').querySelector('.reply-count');
+                  const currentReplyCount = parseInt(replyCountSpan.textContent.match(/\d+/)[0]);
+                  replyCountSpan.innerHTML = `<i class="fas fa-reply-all"></i> ${currentReplyCount + 1}`;
+                } else {
+                  alert('Failed to post reply.');
+                }
+              });
+            });
+          }
+        });
+      });
+
+      // Handle main comment form submission
+      document.querySelectorAll('.post-comment-form').forEach(form => {
+        form.addEventListener('submit', (e) => {
+          handleFormSubmit(e, (data, form) => {
+            if (data.success) {
+              const newComment = data.newComment;
+              const commentsList = form.closest('.modal').querySelector('.comments-list');
+              const newCommentHtml = `
+                <div class="comment-block" data-comment-id="${newComment._id}">
+                  <img src="${newComment.createdBy.profileImageURL}" alt="Profile Image">
+                  <div class="comment-content">
+                    <div class="comment-author"><a href="/profile/${newComment.createdBy._id}" style="color:var(--primary-color);text-decoration:none;">${newComment.createdBy.fullname}</a></div>
+                    <div class="comment-text">${newComment.content}</div>
+                    <div class="comment-time"><i class="fas fa-clock"></i> Just now</div>
+                    <div class="comment-actions">
+                      <button class="comment-action-btn like-comment-btn" data-comment-id="${newComment._id}">
+                        <i class="fas fa-heart"></i>
+                        <span class="like-count">0</span>
+                      </button>
+                      <button class="comment-action-btn reply-btn" data-comment-id="${newComment._id}">
+                        <i class="fas fa-reply"></i> Reply
+                      </button>
+                      <span class="reply-count"><i class="fas fa-reply-all"></i> 0</span>
+                    </div>
+                    <div class="comment-replies"></div>
+                    <div class="reply-form-container"></div>
+                  </div>
+                  <div class="comment-menu">
+                    <button class="dots-btn" onclick="toggleCommentMenu('${newComment._id}')">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu" id="comment-menu-${newComment._id}">
+                      <button class="delete-btn delete-comment-btn" data-comment-id="${newComment._id}"><i class="fas fa-trash"></i> Delete</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+              commentsList.innerHTML += newCommentHtml;
+              form.querySelector('textarea').value = '';
+
+              // Remove "No comments yet" if present
+              const noCommentsDiv = commentsList.querySelector('div[style*="color:#b2becd"]');
+              if (noCommentsDiv) noCommentsDiv.remove();
+
+              // Update total comments count
+              const modal = form.closest('.modal');
+              const modalId = modal.id;
+              const blogId = modalId.split('-')[1];
+              const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+              const countSpan = blogCard.querySelector('.comments-count');
+              const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
+              let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
+              currentCount += 1;
+              countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
+            } else {
+              alert('Failed to post comment.');
+            }
+          });
+        });
       });
     });
-
-    // Add similar logic for comments, likes, deletes as in home.ejs if needed
-    // ... (copy the comment handling scripts from home.ejs here if comments are interactive in search, but since search shows previews, perhaps not necessary)
   </script>
 </body>
 </html>
