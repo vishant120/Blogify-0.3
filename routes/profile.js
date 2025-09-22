@@ -13,17 +13,18 @@ const router = Router();
 
 // Utility: Render Profile with Defaults
 const renderProfile = (res, user, profileUser, blogs, isFollowing = false, followStatus = "follow", commonFollowers = [], messages = {}) => {
-  const canViewPrivate = !profileUser.isPrivate || profileUser.isOwn || isFollowing;
+  // Only restrict blog content for private accounts if not followed or not own
+  const canViewContent = !profileUser.isPrivate || profileUser.isOwn || isFollowing;
   return res.render("profile", {
     user: user || null,
     profileUser,
-    blogs: blogs || [],
+    blogs: canViewContent ? blogs : [], // Only show blogs if allowed
     isFollowing,
     followStatus,
-    commonFollowers,
+    commonFollowers: canViewContent ? commonFollowers : [], // Hide common followers for private accounts
     success_msg: messages.success_msg || null,
     error_msg: messages.error_msg || null,
-    canViewPrivate
+    canViewContent
   });
 };
 
@@ -127,23 +128,19 @@ router.get("/:id", async (req, res) => {
       ? await User.findById(req.params.id).then(u => u.followers?.some(f => f.equals(req.user._id)) || false)
       : false;
 
-    const canViewPrivate = !profileUser.isPrivate || isOwn || isFollowing;
+    const canViewContent = !profileUser.isPrivate || isOwn || isFollowing;
 
-    if (canViewPrivate) {
-      profileUser = await User.findById(req.params.id)
-        .populate("following", "fullname profileImageURL")
-        .populate("followers", "fullname profileImageURL")
-        .populate({
-          path: "likedBlogs",
-          populate: { path: "createdBy", select: "fullname profileImageURL" },
-        });
-    } else {
-      profileUser.followers = [];
-      profileUser.following = [];
-    }
+    // Always populate profile details, but restrict followers/following if private
+    profileUser = await User.findById(req.params.id)
+      .populate(canViewContent ? "following" : [], "fullname profileImageURL")
+      .populate(canViewContent ? "followers" : [], "fullname profileImageURL")
+      .populate({
+        path: "likedBlogs",
+        populate: { path: "createdBy", select: "fullname profileImageURL" },
+      });
 
     let allBlogs = [];
-    if (canViewPrivate) {
+    if (canViewContent) {
       allBlogs = await Blog.find({ createdBy: req.params.id })
         .populate("createdBy", "fullname profileImageURL")
         .populate("likes", "fullname profileImageURL")
@@ -210,7 +207,7 @@ router.get("/:id", async (req, res) => {
       });
       followStatus = isOwn ? "own" : isFollowing ? "following" : pending ? "requested" : "follow";
 
-      if (canViewPrivate) {
+      if (canViewContent) {
         commonFollowers = profileUser.followers?.filter((f) =>
           currentUser.followers?.some((cf) => cf._id.equals(f._id)) || false
         ) || [];
