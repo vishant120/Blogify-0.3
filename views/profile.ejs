@@ -162,85 +162,85 @@
       </p>
     <% } %>
 
-<% if (profileUser) { %>
-  <div class="profile-header">
-    <img src="<%= profileUser.profileImageURL || '/default-profile.png' %>" alt="Profile Image" class="profile-image">
-    <div class="profile-info">
-      <h1><%= profileUser.fullname %></h1>
-      <p><%= profileUser.bio || 'No bio provided' %></p>
-      <% if (user && !profileUser.isOwn) { %>
-        <button class="follow-btn <%= followStatus %>" data-user-id="<%= profileUser._id %>">
-          <%= followStatus === 'following' ? 'Following' : followStatus === 'requested' ? 'Requested' : 'Follow' %>
-        </button>
-      <% } %>
-    </div>
-  </div>
-
-  <div class="stats">
-    <div class="followers-count" onclick="showPopup('followers-popup')">
-      <strong><%= profileUser.followers.length %></strong> Followers
-    </div>
-    <div class="following-count" onclick="showPopup('following-popup')">
-      <strong><%= profileUser.following.length %></strong> Following
-    </div>
-    <div><strong><%= blogs.length %></strong> Blogs</div>
-  </div>
-
-  <% if (commonFollowers.length > 0) { %>
-    <p>Followed by <%= commonFollowers.map(f => f.fullname).join(', ') %></p>
-  <% } %>
-
-  <div class="blogs-section">
-    <h2>Blogs</h2>
-    <% if (!canViewContent) { %>
-      <p class="private-message">This account is private. Follow to see their posts.</p>
-    <% } else if (blogs.length === 0) { %>
-      <p>No blogs posted yet.</p>
-    <% } else { %>
-      <% blogs.forEach(blog => { %>
-        <div class="blog-card">
-          <h3><%= blog.title %></h3>
-          <p><%= blog.body.substring(0, 100) %>...</p>
-          <p><strong>By:</strong> <%= blog.createdBy.fullname %> | <strong>Likes:</strong> <%= blog.likes.length %> | <strong>Comments:</strong> <%= blog.totalComments %></p>
+    <% if (profileUser) { %>
+      <div class="profile-header">
+        <img src="<%= profileUser.profileImageURL || '/default-profile.png' %>" alt="Profile Image" class="profile-image">
+        <div class="profile-info">
+          <h1><%= profileUser.fullname %></h1>
+          <p><%= profileUser.bio || 'No bio provided' %></p>
+          <% if (user && !profileUser.isOwn) { %>
+            <button class="follow-btn <%= followStatus %>" data-user-id="<%= profileUser._id %>">
+              <%= followStatus === 'following' ? 'Following' : followStatus === 'requested' ? 'Requested' : 'Follow' %>
+            </button>
+          <% } %>
         </div>
-      <% }); %>
-    <% } %>
-  </div>
+      </div>
 
-  <!-- Followers Popup -->
-  <div class="popup followers-popup">
-    <h3>Followers</h3>
-    <button class="close-btn close-followers" aria-label="Close Followers Popup">
-      <i class="fas fa-times"></i>
-    </button>
-    <% if (profileUser.followers.length > 0) { %>
-      <% profileUser.followers.forEach(follower => { %>
-        <p><%= follower.fullname %></p>
-      <% }); %>
+      <div class="stats">
+        <div class="followers-count" onclick="showPopup('followers-popup')">
+          <strong><%= profileUser.followers.length %></strong> Followers
+        </div>
+        <div class="following-count" onclick="showPopup('following-popup')">
+          <strong><%= profileUser.following.length %></strong> Following
+        </div>
+        <div><strong><%= blogs.length %></strong> Blogs</div>
+      </div>
+
+      <% if (commonFollowers.length > 0) { %>
+        <p>Followed by <%= commonFollowers.map(f => f.fullname).join(', ') %></p>
+      <% } %>
+
+      <div class="blogs-section">
+        <h2>Blogs</h2>
+        <% if (!canViewContent) { %>
+          <p class="private-message">This account is private. Follow to see their posts.</p>
+        <% } else if (blogs.length === 0) { %>
+          <p>No blogs posted yet.</p>
+        <% } else { %>
+          <% blogs.forEach(blog => { %>
+            <div class="blog-card">
+              <h3><%= blog.title %></h3>
+              <p><%= blog.body.substring(0, 100) %>...</p>
+              <p><strong>By:</strong> <%= blog.createdBy.fullname %> | <strong>Likes:</strong> <%= blog.likes.length %> | <strong>Comments:</strong> <%= blog.totalComments %></p>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+
+      <!-- Followers Popup -->
+      <div class="popup followers-popup">
+        <h3>Followers</h3>
+        <button class="close-btn close-followers" aria-label="Close Followers Popup">
+          <i class="fas fa-times"></i>
+        </button>
+        <% if (profileUser.followers.length > 0) { %>
+          <% profileUser.followers.forEach(follower => { %>
+            <p><%= follower.fullname %></p>
+          <% }); %>
+        <% } else { %>
+          <p>No followers to show.</p>
+        <% } %>
+      </div>
+
+      <!-- Following Popup -->
+      <div class="popup following-popup">
+        <h3>Following</h3>
+        <button class="close-btn close-following" aria-label="Close Following Popup">
+          <i class="fas fa-times"></i>
+        </button>
+        <% if (profileUser.following.length > 0) { %>
+          <% profileUser.following.forEach(following => { %>
+            <p><%= following.fullname %></p>
+          <% }); %>
+        <% } else { %>
+          <p>Not following anyone.</p>
+        <% } %>
+      </div>
+
+      <div class="popup-overlay"></div>
     <% } else { %>
-      <p>No followers to show.</p>
+      <p class="error">User not found.</p>
     <% } %>
-  </div>
-
-  <!-- Following Popup -->
-  <div class="popup following-popup">
-    <h3>Following</h3>
-    <button class="close-btn close-following" aria-label="Close Following Popup">
-      <i class="fas fa-times"></i>
-    </button>
-    <% if (profileUser.following.length > 0) { %>
-      <% profileUser.following.forEach(following => { %>
-        <p><%= following.fullname %></p>
-      <% }); %>
-    <% } else { %>
-      <p>Not following anyone.</p>
-    <% } %>
-  </div>
-
-  <div class="popup-overlay"></div>
-<% } else { %>
-  <p class="error">User not found.</p>
-<% } %>
   </div>
 
   <script>
@@ -279,22 +279,34 @@
     document.querySelector('.follow-btn')?.addEventListener('click', async (e) => {
       const button = e.target;
       const userId = button.getAttribute('data-user-id');
-      const currentStatus = button.classList.contains('following') ? 'following' : button.classList.contains('requested') ? 'requested' : 'follow';
+      let currentStatus = 'follow';
+      if (button.classList.contains('following')) currentStatus = 'following';
+      if (button.classList.contains('requested')) currentStatus = 'requested';
+      let endpoint = '';
+      if (currentStatus === 'following') {
+        endpoint = `/user/unfollow/${userId}`;
+      } else if (currentStatus === 'requested') {
+        endpoint = `/user/cancel-follow/${userId}`;
+      } else {
+        endpoint = `/user/follow/${userId}`;
+      }
       
       try {
-        const response = await fetch('/follow', {
+        const response = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, action: currentStatus === 'following' ? 'unfollow' : 'follow' }),
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         const data = await response.json();
         if (data.success) {
-          if (currentStatus === 'following') {
-            button.classList.remove('following');
-            button.textContent = 'Follow';
+          button.classList.remove('following', 'requested');
+          if (data.newStatus === 'following') {
+            button.classList.add('following');
+            button.textContent = 'Following';
+          } else if (data.newStatus === 'requested') {
+            button.classList.add('requested');
+            button.textContent = 'Requested';
           } else {
-            button.classList.add(data.isPrivate ? 'requested' : 'following');
-            button.textContent = data.isPrivate ? 'Requested' : 'Following';
+            button.textContent = 'Follow';
           }
           location.reload();
         } else {
