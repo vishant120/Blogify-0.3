@@ -1,4 +1,3 @@
-// routes/profile.js
 const { Router } = require("express");
 const fs = require("fs").promises;
 const { randomBytes, createHmac } = require("crypto");
@@ -14,6 +13,7 @@ const router = Router();
 
 // Utility: Render Profile with Defaults
 const renderProfile = (res, user, profileUser, blogs, isFollowing = false, followStatus = "follow", commonFollowers = [], messages = {}) => {
+  const canViewPrivate = !profileUser.isPrivate || profileUser.isOwn || isFollowing;
   return res.render("profile", {
     user: user || null,
     profileUser,
@@ -23,6 +23,7 @@ const renderProfile = (res, user, profileUser, blogs, isFollowing = false, follo
     commonFollowers,
     success_msg: messages.success_msg || null,
     error_msg: messages.error_msg || null,
+    canViewPrivate
   });
 };
 
@@ -40,11 +41,9 @@ router.get("/", async (req, res) => {
         path: "likedBlogs",
         populate: { path: "createdBy", select: "fullname profileImageURL" },
       });
+    profileUser.isOwn = true;
 
-    const currentUser = req.user ? await User.findById(req.user._id)
-      .populate("followers", "fullname profileImageURL _id")
-      .populate("following", "fullname profileImageURL _id")
-    : null;
+    const currentUser = req.user ? await User.findById(req.user._id).populate("following", "fullname profileImageURL _id") : null;
 
     const allBlogs = await Blog.find({ createdBy: req.user._id })
       .populate("createdBy", "fullname profileImageURL")
@@ -112,9 +111,7 @@ router.get("/:id", async (req, res) => {
       return renderProfile(res, req.user, null, [], false, "follow", [], { error_msg: "Invalid user ID" });
     }
 
-    const profileUser = await User.findById(req.params.id)
-      .populate("following", "fullname profileImageURL")
-      .populate("followers", "fullname profileImageURL")
+    let profileUser = await User.findById(req.params.id)
       .populate({
         path: "likedBlogs",
         populate: { path: "createdBy", select: "fullname profileImageURL" },
@@ -125,12 +122,28 @@ router.get("/:id", async (req, res) => {
     }
 
     const isOwn = req.user ? profileUser._id.equals(req.user._id) : false;
+    profileUser.isOwn = isOwn;
     const isFollowing = req.user 
-      ? profileUser.followers?.some((follower) => follower._id.equals(req.user._id)) || false 
+      ? await User.findById(req.params.id).then(u => u.followers?.some(f => f.equals(req.user._id)) || false)
       : false;
 
+    const canViewPrivate = !profileUser.isPrivate || isOwn || isFollowing;
+
+    if (canViewPrivate) {
+      profileUser = await User.findById(req.params.id)
+        .populate("following", "fullname profileImageURL")
+        .populate("followers", "fullname profileImageURL")
+        .populate({
+          path: "likedBlogs",
+          populate: { path: "createdBy", select: "fullname profileImageURL" },
+        });
+    } else {
+      profileUser.followers = [];
+      profileUser.following = [];
+    }
+
     let allBlogs = [];
-    if (!profileUser.isPrivate || isOwn || isFollowing) {
+    if (canViewPrivate) {
       allBlogs = await Blog.find({ createdBy: req.params.id })
         .populate("createdBy", "fullname profileImageURL")
         .populate("likes", "fullname profileImageURL")
@@ -195,11 +208,13 @@ router.get("/:id", async (req, res) => {
         type: "FOLLOW_REQUEST",
         status: "PENDING",
       });
-      followStatus = isFollowing ? "following" : pending ? "requested" : "follow";
+      followStatus = isOwn ? "own" : isFollowing ? "following" : pending ? "requested" : "follow";
 
-      commonFollowers = profileUser.followers?.filter((f) =>
-        currentUser.followers?.some((cf) => cf._id.equals(f._id)) || false
-      ) || [];
+      if (canViewPrivate) {
+        commonFollowers = profileUser.followers?.filter((f) =>
+          currentUser.followers?.some((cf) => cf._id.equals(f._id)) || false
+        ) || [];
+      }
     }
 
     renderProfile(res, req.user, profileUser, blogsWithComments, isFollowing, followStatus, commonFollowers, {
