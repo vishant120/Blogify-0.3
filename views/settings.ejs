@@ -1,4 +1,3 @@
-<!-- views/settings.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -441,7 +440,7 @@
             setLoading(privacySubmit, false);
             if (data.success) {
               showMessage(privacyMessage, data.message || 'Privacy updated successfully', 'success');
-              setTimeout(() => location.href = "/settings?success_msg=Privacy updated successfully", 2000);
+              setTimeout(() => location.href = "/settings", 2000);
             } else {
               showMessage(privacyMessage, data.error || 'Error updating privacy', 'error');
             }
