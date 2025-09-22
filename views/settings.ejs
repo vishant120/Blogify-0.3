@@ -334,7 +334,7 @@
 
       const showMessage = (element, message, type) => {
         element.textContent = message;
-        element.className = \`message \${type}\`;
+        element.className = `message ${type}`;
         element.style.display = 'block';
       };
 
@@ -420,6 +420,7 @@
           } catch (err) {
             setLoading(passwordSubmit, false);
             showMessage(passwordMessage, 'Error sending password reset link', 'error');
+            console.error('Fetch error:', err);
           }
         });
       }
@@ -444,13 +445,14 @@
             setLoading(privacySubmit, false);
             if (data.success) {
               showMessage(privacyMessage, data.message || 'Privacy updated successfully', 'success');
-              setTimeout(() => location.reload(), 2000); // Reload to reflect changes
+              setTimeout(() => location.reload(), 2000);
             } else {
               showMessage(privacyMessage, data.error || 'Error updating privacy', 'error');
             }
           } catch (err) {
             setLoading(privacySubmit, false);
             showMessage(privacyMessage, 'Error updating privacy', 'error');
+            console.error('Fetch error:', err);
           }
         });
       }
@@ -481,6 +483,7 @@
           } catch (err) {
             setLoading(deleteSubmit, false);
             showMessage(deleteMessage, 'Error deleting account', 'error');
+            console.error('Fetch error:', err);
           }
         });
       }
