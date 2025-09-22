@@ -1,4 +1,3 @@
-// routes/user.js
 const { Router } = require("express");
 const User = require("../models/user");
 const Notification = require("../models/notification");
@@ -327,6 +326,7 @@ router.get("/logout", (req, res) => {
 // POST /user/follow/:id
 router.post("/follow/:id", async (req, res) => {
   if (!req.user) {
+    if (req.isXhr) return res.status(401).json({ success: false, error: "Please sign in to follow users" });
     return res.redirect("/user/signin?error_msg=Please sign in to follow users");
   }
 
@@ -334,12 +334,14 @@ router.post("/follow/:id", async (req, res) => {
   const currentUserId = req.user._id;
 
   if (userIdToFollow === currentUserId.toString()) {
+    if (req.isXhr) return res.status(400).json({ success: false, error: "You cannot follow yourself" });
     return res.redirect(`/?error_msg=You cannot follow yourself`);
   }
 
   try {
     const userToFollow = await User.findById(userIdToFollow);
     if (!userToFollow) {
+      if (req.isXhr) return res.status(404).json({ success: false, error: "User not found" });
       return res.redirect(`/?error_msg=User not found`);
     }
 
@@ -351,6 +353,7 @@ router.post("/follow/:id", async (req, res) => {
     });
 
     if (existingNotification) {
+      if (req.isXhr) return res.status(400).json({ success: false, error: "Follow request already sent" });
       return res.redirect(`/?error_msg=Follow request already sent`);
     }
 
@@ -371,6 +374,7 @@ router.post("/follow/:id", async (req, res) => {
 
       req.app.io.to(userIdToFollow.toString()).emit('newNotification', newNotification.toJSON());
 
+      if (req.isXhr) return res.json({ success: true, newStatus: "following" });
       return res.redirect(`/profile/${userIdToFollow}?success_msg=Now following ${userToFollow.fullname}`);
     } else {
       // Private: send request
@@ -384,10 +388,12 @@ router.post("/follow/:id", async (req, res) => {
 
       req.app.io.to(userIdToFollow.toString()).emit('newNotification', newNotification.toJSON());
 
+      if (req.isXhr) return res.json({ success: true, newStatus: "requested" });
       return res.redirect(`/profile/${userIdToFollow}?success_msg=Follow request sent to ${userToFollow.fullname}`);
     }
   } catch (error) {
     console.error("Error sending follow request:", error);
+    if (req.isXhr) return res.status(500).json({ success: false, error: "Failed to send follow request" });
     return res.redirect(`/?error_msg=Failed to send follow request`);
   }
 });
@@ -395,6 +401,7 @@ router.post("/follow/:id", async (req, res) => {
 // POST /user/cancel-follow/:id
 router.post("/cancel-follow/:id", async (req, res) => {
   if (!req.user) {
+    if (req.isXhr) return res.status(401).json({ success: false, error: "Please sign in to cancel follow requests" });
     return res.redirect("/user/signin?error_msg=Please sign in to cancel follow requests");
   }
 
@@ -402,12 +409,14 @@ router.post("/cancel-follow/:id", async (req, res) => {
   const currentUserId = req.user._id;
 
   if (userIdToCancel === currentUserId.toString()) {
+    if (req.isXhr) return res.status(400).json({ success: false, error: "Invalid operation" });
     return res.redirect(`/?error_msg=Invalid operation`);
   }
 
   try {
     const userToCancel = await User.findById(userIdToCancel);
     if (!userToCancel) {
+      if (req.isXhr) return res.status(404).json({ success: false, error: "User not found" });
       return res.redirect(`/?error_msg=User not found`);
     }
 
@@ -422,9 +431,11 @@ router.post("/cancel-follow/:id", async (req, res) => {
       await notification.deleteOne();
     }
 
+    if (req.isXhr) return res.json({ success: true, newStatus: "follow" });
     return res.redirect(`/profile/${userIdToCancel}?success_msg=Follow request cancelled`);
   } catch (error) {
     console.error("Error cancelling follow request:", error);
+    if (req.isXhr) return res.status(500).json({ success: false, error: "Failed to cancel follow request" });
     return res.redirect(`/?error_msg=Failed to cancel follow request`);
   }
 });
@@ -432,6 +443,7 @@ router.post("/cancel-follow/:id", async (req, res) => {
 // POST /user/unfollow/:id
 router.post("/unfollow/:id", async (req, res) => {
   if (!req.user) {
+    if (req.isXhr) return res.status(401).json({ success: false, error: "Please sign in to unfollow users" });
     return res.redirect("/user/signin?error_msg=Please sign in to unfollow users");
   }
 
@@ -439,12 +451,14 @@ router.post("/unfollow/:id", async (req, res) => {
   const currentUserId = req.user._id;
 
   if (userIdToUnfollow === currentUserId.toString()) {
+    if (req.isXhr) return res.status(400).json({ success: false, error: "You cannot unfollow yourself" });
     return res.redirect(`/?error_msg=You cannot unfollow yourself`);
   }
 
   try {
     const userToUnfollow = await User.findById(userIdToUnfollow);
     if (!userToUnfollow) {
+      if (req.isXhr) return res.status(404).json({ success: false, error: "User not found" });
       return res.redirect(`/?error_msg=User not found`);
     }
 
@@ -453,9 +467,11 @@ router.post("/unfollow/:id", async (req, res) => {
       User.findByIdAndUpdate(userIdToUnfollow, { $pull: { followers: currentUserId } }, { new: true }),
     ]);
 
+    if (req.isXhr) return res.json({ success: true, newStatus: "follow" });
     return res.redirect(`/profile/${userIdToUnfollow}?success_msg=Successfully unfollowed ${userToUnfollow.fullname}`);
   } catch (error) {
     console.error("Error unfollowing user:", error);
+    if (req.isXhr) return res.status(500).json({ success: false, error: "Failed to unfollow user" });
     return res.redirect(`/?error_msg=Failed to unfollow user`);
   }
 });
