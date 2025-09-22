@@ -535,27 +535,15 @@
         </div>
         <div class="blog-actions">
           <% if (user) { %>
-            <form action="/blog/<%= blog._id %>/like" method="POST" style="display:inline;">
-              <button class="action-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" type="submit">
-                <i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
-                <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %>
-              </button>
-            </form>
+            <button type="button" class="action-btn ajax-like-btn <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-blog-id="<%= blog._id %>" data-liked="<%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'true' : 'false' %>">
+              <i class="fas <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'fa-heart' : 'fa-heart-broken' %>"></i>
+              <%= blog.likes.some(like => like._id.toString() === user._id.toString()) ? 'Unlike' : 'Like' %>
+            </button>
             <% if (!blog.isOwn) { %>
-              <% if (blog.followStatus === 'requested') { %>
-                <form action="/user/cancel-follow/<%= blog.createdBy._id %>" method="POST" style="display:inline;">
-                  <button class="follow-btn cancel" type="submit">
-                    <i class="fas fa-user-times"></i> Cancel Request
-                  </button>
-                </form>
-              <% } else { %>
-                <form action="<%= blog.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= blog.createdBy._id %>" method="POST" style="display:inline;">
-                  <button class="follow-btn <%= blog.followStatus === 'following' ? 'following' : '' %>" type="submit">
-                    <i class="fas <%= blog.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
-                    <%= blog.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
-                  </button>
-                </form>
-              <% } %>
+              <button type="button" class="follow-btn ajax-follow-btn <%= blog.followStatus === 'following' ? 'following' : blog.followStatus === 'requested' ? 'requested cancel' : '' %>" data-user-id="<%= blog.createdBy._id %>" data-follow-status="<%= blog.followStatus %>">
+                <i class="fas <%= blog.followStatus === 'following' ? 'fa-user-minus' : blog.followStatus === 'requested' ? 'fa-user-times' : 'fa-user-plus' %>"></i>
+                <%= blog.followStatus === 'following' ? 'Unfollow' : blog.followStatus === 'requested' ? 'Cancel Request' : 'Follow' %>
+              </button>
             <% } %>
           <% } %>
           <div class="likes-preview" onclick="showLikes('<%= blog._id %>')">
@@ -869,11 +857,43 @@
         }
       };
 
-      // Follow/Unfollow/Cancel-Follow logic
-      document.querySelectorAll('.ajax-follow-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const userId = btn.dataset.userId;
-          const currentStatus = btn.dataset.followStatus;
+      // AJAX for blog likes
+      document.querySelectorAll('.ajax-like-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const blogId = button.dataset.blogId;
+          let isLiked = button.dataset.liked === 'true';
+          const likesCountSpan = button.closest('.blog-card').querySelector('.likes-count');
+          const currentCount = parseInt(likesCountSpan.textContent.match(/\d+/)[0]);
+
+          try {
+            const response = await fetch(`/blog/${blogId}/like`, {
+              method: 'POST',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+              }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              isLiked = data.isLiked;
+              button.dataset.liked = isLiked ? 'true' : 'false';
+              button.classList.toggle('liked');
+              likesCountSpan.textContent = `<i class="fas fa-heart"></i> ${data.likesCount} Likes`;
+              button.innerHTML = `<i class="fas ${isLiked ? 'fa-heart' : 'fa-heart-broken'}"></i> ${isLiked ? 'Unlike' : 'Like'}`;
+            } else {
+              console.error('Failed to like blog');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+          }
+        });
+      });
+
+      // AJAX for follow/unfollow/cancel
+      document.querySelectorAll('.ajax-follow-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const userId = button.dataset.userId;
+          let currentStatus = button.dataset.followStatus;
           let endpoint = '';
           if (currentStatus === 'following') {
             endpoint = `/user/unfollow/${userId}`;
@@ -885,39 +905,30 @@
           try {
             const response = await fetch(endpoint, {
               method: 'POST',
-              headers: { 
+              headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json' 
-              },
+                'Content-Type': 'application/json'
+              }
             });
             if (response.ok) {
               const data = await response.json();
-              const finalStatus = data.newStatus;
-              
-              btn.dataset.followStatus = finalStatus;
-              btn.classList.remove('following', 'requested', 'cancel');
-              
-              const btnText = btn.querySelector('.btn-text') || btn;
-              const btnIcon = btn.querySelector('i');
-
-              if (finalStatus === 'following') {
-                btnText.textContent = 'Unfollow';
-                if (btnIcon) btnIcon.className = 'fas fa-user-minus';
-                btn.classList.add('following');
-              } else if (finalStatus === 'requested') {
-                btnText.textContent = 'Cancel Request';
-                if (btnIcon) btnIcon.className = 'fas fa-user-times';
-                btn.classList.add('requested');
+              currentStatus = data.newStatus;
+              button.dataset.followStatus = currentStatus;
+              button.classList.remove('following', 'requested', 'cancel');
+              if (currentStatus === 'following') {
+                button.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
+                button.classList.add('following');
+              } else if (currentStatus === 'requested') {
+                button.innerHTML = '<i class="fas fa-user-times"></i> Cancel Request';
+                button.classList.add('requested', 'cancel');
               } else {
-                btnText.textContent = 'Follow';
-                if (btnIcon) btnIcon.className = 'fas fa-user-plus';
+                button.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
               }
             } else {
-              alert('Action failed. Please try again.');
+              console.error('Failed to update follow status');
             }
           } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
           }
         });
       });
@@ -1032,7 +1043,6 @@
             newForm.addEventListener('submit', (e) => {
               handleFormSubmit(e, (data, form) => {
                 if (data.success) {
-                  // Assuming the server returns the new reply object
                   const newReply = data.newReply;
                   const repliesContainer = form.closest('.comment-content').querySelector('.comment-replies');
                   
@@ -1073,6 +1083,11 @@
                   let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
                   currentCount += 1;
                   countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
+
+                  // Update reply count
+                  const replyCountSpan = button.closest('.comment-actions').querySelector('.reply-count');
+                  const currentReplyCount = parseInt(replyCountSpan.textContent.match(/\d+/)[0]);
+                  replyCountSpan.innerHTML = `<i class="fas fa-reply-all"></i> ${currentReplyCount + 1}`;
                 } else {
                   alert('Failed to post reply.');
                 }
