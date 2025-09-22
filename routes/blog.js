@@ -119,17 +119,20 @@ router.delete("/:id", async (req, res) => {
 router.post("/:id/like", async (req, res) => {
   try {
     if (!req.user) {
+      if (req.isXhr) return res.status(401).json({ success: false, error: "Please log in to like a blog" });
       return res.redirect(`/blog/${req.params.id}?error_msg=Please log in to like a blog`);
     }
 
     const blog = await Blog.findById(req.params.id).populate("createdBy", "fullname isPrivate followers _id");
     if (!blog) {
+      if (req.isXhr) return res.status(404).json({ success: false, error: "Blog not found" });
       return res.redirect(`/blog/${req.params.id}?error_msg=Blog not found`);
     }
 
     const cb = blog.createdBy;
     const canView = !cb.isPrivate || cb._id.equals(req.user._id) || cb.followers.some(f => f.equals(req.user._id));
     if (!canView) {
+      if (req.isXhr) return res.status(403).json({ success: false, error: "This blog is private" });
       return res.redirect(`/blog/${req.params.id}?error_msg=This blog is private`);
     }
 
@@ -150,7 +153,6 @@ router.post("/:id/like", async (req, res) => {
       user.likedBlogs.push(req.params.id);
 
       if (blog.createdBy._id.toString() !== req.user._id.toString()) {
-        // Check for existing like notification
         const existingLikeNotification = await Notification.findOne({
           sender: req.user._id,
           recipient: blog.createdBy._id,
@@ -172,9 +174,14 @@ router.post("/:id/like", async (req, res) => {
     }
 
     await Promise.all([blog.save(), user.save()]);
+
+    if (req.isXhr) {
+      return res.json({ success: true, isLiked: !isLiked, likesCount: blog.likes.length });
+    }
     return res.redirect(`/blog/${req.params.id}?success_msg=${isLiked ? "Blog unliked" : "Blog liked"}`);
   } catch (err) {
     console.error("Error liking blog:", err);
+    if (req.isXhr) return res.status(500).json({ success: false, error: "Failed to like blog" });
     return res.redirect(`/blog/${req.params.id}?error_msg=Failed to like blog`);
   }
 });
