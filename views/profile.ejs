@@ -183,10 +183,10 @@
         <div class="following-count" onclick="<% if (canViewContent) { %>showPopup('following-popup')<% } %>">
           <strong><%= canViewContent ? profileUser.following.length : 0 %></strong> Following
         </div>
-        <div><strong><%= blogs.length %></strong> Blogs</div>
+        <div><strong><%= canViewContent ? blogs.length : 0 %></strong> Blogs</div>
       </div>
 
-      <% if (commonFollowers.length > 0) { %>
+      <% if (canViewContent && commonFollowers.length > 0) { %>
         <p>Followed by <%= commonFollowers.map(f => f.fullname).join(', ') %></p>
       <% } %>
 
