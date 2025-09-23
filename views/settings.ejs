@@ -419,7 +419,7 @@
             const data = await response.json();
             setLoading(privacySubmit, false);
             if (data.success) {
-              showMessage(privacyMessage, data.message || 'Privacy updated successfully', 'success');
+              showMessage(privacyMessage, `Account ${isPrivate ? 'private' : 'public'} success`, 'success');
               setTimeout(() => location.reload(), 2000);
             } else {
               showMessage(privacyMessage, data.error || 'Error updating privacy', 'error');
