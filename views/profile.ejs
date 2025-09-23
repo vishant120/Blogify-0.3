@@ -72,7 +72,7 @@
         <div id="followingBtn"><span><%= profileUser.following.length %></span> Following</div>
       </div>
       <div class="profile-actions">
-        <% if (!isOwn) { %>
+        <% if (typeof isOwn !== 'undefined' && !isOwn) { %>
           <% if (isFollowing) { %>
             <button class="btn" disabled>Following</button>
           <% } else { %>
@@ -85,7 +85,7 @@
     </div>
   </div>
 
-  <% if (isOwn || isFollowing) { %>
+  <% if ((typeof isOwn !== 'undefined' && isOwn) || isFollowing) { %>
     <div class="blog-list">
       <% blogs.forEach(blog => { %>
         <div class="blog-card" id="blog-<%= blog._id %>">
@@ -96,7 +96,7 @@
             <button class="dropdown-toggle"><i class="fas fa-ellipsis-v"></i></button>
             <div class="dropdown-content">
               <a href="javascript:void(0)" onclick="shareBlog('<%= blog._id %>')"><i class="fas fa-share"></i> Share Blog</a>
-              <% if (isOwn) { %>
+              <% if (typeof isOwn !== 'undefined' && isOwn) { %>
                 <form action="/blog/delete/<%= blog._id %>?_method=DELETE" method="POST" style="margin:0;">
                   <button type="submit" onclick="return confirm('Delete this blog?');"><i class="fas fa-trash"></i> Delete Blog</button>
                 </form>
