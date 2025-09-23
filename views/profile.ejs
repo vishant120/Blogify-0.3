@@ -6,8 +6,294 @@
   <title>Profile | Blogifyer</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <style>
-    /* ... full style content as in your base file ... */
-    /* (preserve all your original styles) */
+    :root {
+      --primary: #1abc9c;
+      --secondary: #34495e;
+      --danger: #e74c3c;
+      --success: #2ecc71;
+      --profile-bg: #232c3e;
+      --card-bg: #2c3e50;
+      --border: #34495e;
+      --text-main: #ecf0f1;
+      --text-dim: #b2becd;
+      --shadow: 0 4px 20px 0 rgba(31, 38, 135, 0.15);
+    }
+    body {
+      background: linear-gradient(120deg, #181c20 0%, #202d3d 100%);
+      color: var(--text-main);
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      margin: 2.5rem auto 1rem;
+      padding: 2.2rem 2rem 2.2rem;
+      background: var(--profile-bg);
+      border-radius: 1.2rem;
+      box-shadow: var(--shadow);
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 2.2rem;
+      margin-bottom: 2.2rem;
+    }
+    .profile-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid var(--primary);
+      object-fit: cover;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.19);
+      background: #14171a;
+    }
+    .profile-details {
+      flex: 1;
+    }
+    .profile-details h2 {
+      font-size: 2rem;
+      font-weight: 600;
+      margin: 0 0 0.1em 0;
+      color: var(--primary);
+      letter-spacing: 1px;
+    }
+    .profile-details p {
+      margin: 0.25em 0;
+      color: var(--text-main);
+      font-size: 1.08rem;
+    }
+    .profile-details .bio {
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: 1rem;
+    }
+    .profile-details .fstats {
+      margin-top: 0.6em;
+      font-size: 1rem;
+      color: var(--text-main);
+      display: flex;
+      gap: 1.3em;
+    }
+    .profile-details .fstats span {
+      cursor: pointer;
+      color: var(--primary);
+      text-decoration: underline dotted;
+      outline: none;
+    }
+    .profile-actions {
+      display: flex;
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .follow-btn {
+      padding: 0.6rem 1.4rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.03rem;
+      background: var(--success);
+      color: var(--text-main);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.23s, transform 0.16s;
+      display: flex;
+      align-items: center;
+      gap: 0.55em;
+    }
+    .follow-btn.unfollow {
+      background: var(--danger);
+    }
+    .follow-btn.cancel {
+      background: var(--danger);
+    }
+    .follow-btn.requested {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+    .follow-btn:hover { background: #219653; transform: scale(1.04);}
+    .follow-btn.unfollow:hover { background: #c0392b;}
+    .follow-btn.cancel:hover { background: #c0392b;}
+    /* Popups */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--card-bg);
+      padding: 2.2rem 1.2rem 1.2rem;
+      border-radius: 1rem;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.28);
+      z-index: 2200;
+      min-width: 320px;
+      max-width: 98vw;
+      max-height: 75vh;
+      overflow-y: auto;
+      animation: fadeIn 0.3s;
+    }
+    .popup h3 {
+      margin-top: 0; color: var(--primary); margin-bottom: 1.2rem;
+      font-size: 1.25rem; letter-spacing: .5px;
+    }
+    .popup .close-btn {
+      position: absolute;
+      top: 14px; right: 18px;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.33rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .popup .close-btn:hover { color: var(--danger);}
+    .popup-list-user {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .popup-list-user:last-child { border-bottom: none;}
+    .popup-list-user img {
+      width: 40px; height: 40px; border-radius: 50%;
+      object-fit: cover; background: #181c20;
+    }
+    .popup-list-user a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 1.07rem;
+      font-weight: 500;
+      transition: text-decoration 0.15s;
+    }
+    .popup-list-user a:hover { text-decoration: underline;}
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.48);
+      z-index: 2000;
+    }
+    .blogs-section {
+      margin-top: 2.2rem;
+    }
+    .blogs-section h2 {
+      color: var(--primary);
+      font-size: 1.3rem;
+      margin-bottom: 1.1rem;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+    .blog-card {
+      background: var(--card-bg);
+      border-radius: 0.8rem;
+      padding: 1.4rem 1rem 1.1rem;
+      box-shadow: 0 4px 24px 0 rgba(31,38,135,0.07);
+      margin-bottom: 1.2rem;
+      border: 1.3px solid var(--border);
+      transition: box-shadow 0.2s, transform 0.15s;
+      position: relative;
+      display: flex;
+      gap: 1.1rem;
+      align-items: flex-start;
+      min-height: 100px;
+    }
+    .blog-card:hover {
+      box-shadow: 0 10px 35px 0 rgba(26,188,156,0.10);
+      transform: scale(1.015);
+    }
+    .blog-cover-image {
+      width: 110px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 0.5rem;
+      background: #232c3e;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px 0 rgba(31,38,135,0.09);
+      flex-shrink: 0;
+      display: block;
+    }
+    .blog-card-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .blog-card-title {
+      font-size: 1.15rem;
+      font-weight: bold;
+      margin-bottom: 0.4rem;
+      color: var(--primary);
+    }
+    .blog-card-title a { color: inherit; text-decoration: none;}
+    .blog-card-title a:hover { text-decoration: underline;}
+    .blog-card-body {
+      color: var(--text-dim);
+      font-size: 1.03rem;
+      margin-bottom: 0.6rem;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    /* 3-dots menu */
+    .blog-menu {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      z-index: 10;
+    }
+    .dots-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.45rem;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 50%;
+      transition: background 0.18s;
+    }
+    .dots-btn:focus,
+    .dots-btn:hover {
+      background: rgba(200,200,200,0.07);
+      color: var(--primary);
+      outline: none;
+    }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 28px;
+      right: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      box-shadow: 0 2px 10px 0 rgba(31,38,135,0.13);
+      min-width: 120px;
+      z-index: 1001;
+      padding: 0.3rem 0.1rem;
+    }
+    .dropdown-menu button {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 1rem;
+      text-align: left;
+      width: 100%;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      border-radius: 0.4rem;
+      transition: background 0.15s;
+    }
+    .dropdown-menu button:hover {
+      background: rgba(231,76,60,0.09);
+    }
+    @media (max-width: 900px) {
+      .container { padding: 1.2rem 0.4rem; }
+      .profile-header { gap: 1rem; }
+      .blog-card { flex-direction: column; gap: 0.7rem; min-height: unset;}
+      .blog-cover-image { width: 100%; height: 145px; margin: 0 0 1rem 0;}
+      .blog-card-main { min-width: 0; }
+    }
+    @media (max-width: 600px) {
+      .container { padding: 0.4rem 0.1rem;}
+      .profile-header { flex-direction: column; align-items: flex-start; gap: 1.2rem;}
+      .profile-avatar { width: 80px; height: 80px;}
+      .blogs-section { margin-top: 1.2rem;}
+      .blog-card { flex-direction: column; gap: 0.5rem;}
+      .blog-cover-image { min-width: 100%; max-width: 100%; height: 140px;}
+      .blog-menu { right: 10px; top: 10px;}
+    }
   </style>
 </head>
 <body>
@@ -58,7 +344,7 @@
           <% } %>
         <% } %>
       </div>
-      <!-- Followers, Following, Common popups (unchanged) -->
+      <!-- Followers Popup -->
       <div class="popup followers-popup">
         <h3><i class="fas fa-users"></i> Followers</h3>
         <button class="close-btn close-followers" aria-label="Close Followers">
@@ -75,6 +361,7 @@
           <% }) %>
         <% } %>
       </div>
+      <!-- Following Popup -->
       <div class="popup following-popup">
         <h3><i class="fas fa-user-friends"></i> Following</h3>
         <button class="close-btn close-following" aria-label="Close Following">
@@ -91,6 +378,7 @@
           <% }) %>
         <% } %>
       </div>
+      <!-- Common Followers Popup -->
       <div class="popup common-popup">
         <h3><i class="fas fa-user-group"></i> Common Followers</h3>
         <button class="close-btn close-common" aria-label="Close Common Followers">
@@ -173,7 +461,6 @@
   </div>
   <div class="popup-overlay"></div>
   <script>
-    // 3-dot blog menu logic
     document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.dots-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
