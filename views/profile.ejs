@@ -2,634 +2,204 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= profileUser.fullname %> | Blogify</title>
+  <title><%= profileUser.fullname %> | Profile | Blogify</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <style>
-    body {
-      background-color: #1a2634;
-      color: #ecf0f1;
-      margin: 0;
-      font-family: 'Arial', sans-serif;
+    body { background: #1a2634; color: #ecf0f1; font-family: Arial,sans-serif; margin:0;}
+    .profile-header { text-align:center; padding:2rem 1rem 1rem 1rem; background:#2c3e50;}
+    .profile-img { width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #f1c40f;}
+    .profile-info { margin-top:1rem;}
+    .profile-info h2 { color: #f1c40f; margin:0; }
+    .profile-info p { color: #b2bec3; margin:0.5rem 0 0 0; }
+    .profile-actions { margin-top:1rem; }
+    .btn { background:#f1c40f; color:#1a2634; border:none; border-radius:5px; padding:0.6rem 1.2rem; font-weight:bold; cursor:pointer; margin:0.2rem;}
+    .btn:hover { background:#e1b70e; }
+    .profile-followers { margin-top:1rem; color:#f1c40f;}
+    .blog-list { max-width:700px; margin:2rem auto; }
+    .blog-card { background:#233146; border-radius:8px; margin-bottom:2rem; box-shadow:0 2px 8px rgba(0,0,0,0.18);}
+    .blog-cover { width:100%; height:240px; border-radius:8px 8px 0 0; object-fit:cover;}
+    .blog-content { padding:1.2rem; }
+    .blog-title { font-size:1.3rem; color:#f1c40f; margin:0;}
+    .blog-desc { margin:0.5rem 0 1rem 0; color:#b2bec3;}
+    .blog-actions { display:flex; align-items:center; gap:1.5rem; }
+    .like-btn, .comment-btn { background:none; border:none; color:#f1c40f; font-size:1.3rem; cursor:pointer; }
+    .like-btn.liked { color:#e74c3c; }
+    .blog-actions span { font-size:1rem; color:#f1c40f; }
+    .comments-section { background:#1a2634; border-radius:0 0 8px 8px; padding:1rem; }
+    .comment-form { display:flex; gap:0.5rem; margin-bottom:1rem; }
+    .comment-form input, .comment-form textarea { flex:1; padding:0.6rem; border-radius:4px; border:none; background:#34495e; color:#ecf0f1; }
+    .comment-form button { background:#27ae60; color:#fff; border:none; border-radius:4px; padding:.6rem 1.2rem; cursor:pointer;}
+    .comment { margin-bottom:1rem; }
+    .comment-user { font-weight: bold; color:#f1c40f; }
+    .comment-body { margin:0.3rem 0 0.2rem 0; }
+    .reply-btn { background:none; border:none; color:#00b894; font-size:0.9rem; cursor:pointer; }
+    .reply-form { margin-left:2rem; margin-top:0.5rem; display:flex; gap:0.4rem;}
+    .reply-form textarea { flex:1; }
+    .reply { margin-left:2rem; background:#233146; padding:0.5rem 1rem; border-radius:5px;}
+    /* Responsive */
+    @media (max-width:800px) {
+      .blog-list {padding:0 1rem;}
+      .blog-cover {height:180px;}
     }
-    .container {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 2rem;
-      background-color: #2c3e50;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-    .profile-header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .profile-image {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    .profile-info {
-      flex: 1;
-    }
-    .profile-info h1 {
-      font-size: 1.8rem;
-      margin: 0;
-    }
-    .profile-info p {
-      margin: 0.5rem 0;
-      color: #bdc3c7;
-    }
-    .follow-btn {
-      padding: 0.5rem 1rem;
-      background-color: #3498db;
-      color: #ecf0f1;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    .follow-btn:hover {
-      background-color: #2980b9;
-    }
-    .follow-btn.following {
-      background-color: #2ecc71;
-    }
-    .follow-btn.requested {
-      background-color: #f1c40f;
-    }
-    .stats {
-      display: flex;
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-    .stats div {
-      cursor: pointer;
-    }
-    .blogs-section {
-      margin-top: 2rem;
-    }
-    .blog-card {
-      background-color: #34495e;
-      padding: 1rem;
-      border-radius: 4px;
-      margin-bottom: 1rem;
-      position: relative;
-    }
-    .blog-card h3 {
-      margin: 0;
-      font-size: 1.2rem;
-    }
-    .blog-card p {
-      margin: 0.5rem 0;
-      color: #bdc3c7;
-    }
-    .blog-actions {
-      display: flex;
-      gap: 1rem;
-      margin-top: 0.5rem;
-    }
-    .blog-actions button {
-      background: none;
-      border: none;
-      color: #ecf0f1;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .blog-actions button:hover {
-      color: #3498db;
-    }
-    .toggle-menu {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      cursor: pointer;
-    }
-    .toggle-menu-content {
-      display: none;
-      position: absolute;
-      top: 20px;
-      right: 0;
-      background-color: #34495e;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      z-index: 100;
-    }
-    .toggle-menu-content button {
-      display: block;
-      padding: 0.5rem 1rem;
-      background: none;
-      border: none;
-      color: #ecf0f1;
-      width: 100%;
-      text-align: left;
-      cursor: pointer;
-    }
-    .toggle-menu-content button:hover {
-      background-color: #3e5a75;
-    }
-    .toggle-menu-content.active {
-      display: block;
-    }
-    .comment-section {
-      margin-top: 1rem;
-      padding-left: 1rem;
-    }
-    .comment {
-      margin-bottom: 0.5rem;
-    }
-    .reply {
-      margin-left: 2rem;
-      margin-bottom: 0.5rem;
-    }
-    .comment-input {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-    .comment-input input {
-      flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #34495e;
-      border-radius: 4px;
-      background-color: #2c3e50;
-      color: #ecf0f1;
-    }
-    .comment-input button {
-      padding: 0.5rem 1rem;
-      background-color: #3498db;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .comment-input button:hover {
-      background-color: #2980b9;
-    }
-    .popup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: #2c3e50;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      z-index: 2000;
-      max-width: 400px;
-      width: 90%;
-    }
-    .popup-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 1500;
-    }
-    .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      color: #ecf0f1;
-      font-size: 1.2rem;
-      cursor: pointer;
-    }
-    .message {
-      display: none;
-      padding: 0.75rem;
-      margin-bottom: 1rem;
-      border-radius: 4px;
-      font-size: 0.9rem;
-    }
-    .success {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    .error {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-    .private-message {
-      text-align: center;
-      color: #e74c3c;
-      font-style: italic;
-    }
-    @media (max-width: 768px) {
-      .container { margin: 1rem; padding: 1rem; }
-      .profile-header { flex-direction: column; align-items: flex-start; }
-      .profile-image { width: 80px; height: 80px; }
+    @media (max-width:600px) {
+      .blog-cover {height:120px;}
+      .modal-content {padding:1rem;}
     }
   </style>
 </head>
 <body>
   <%- include('partials/header', { user }) %>
-
-  <div class="container">
-    <% if (success_msg) { %>
-      <p class="message success" style="display: block;">
-        <i class="fas fa-check-circle"></i> <%= success_msg %>
-      </p>
-    <% } %>
-    <% if (error_msg) { %>
-      <p class="message error" style="display: block;">
-        <i class="fas fa-exclamation-circle"></i> <%= error_msg %>
-      </p>
-    <% } %>
-
-    <% if (profileUser) { %>
-      <div class="profile-header">
-        <img src="<%= profileUser.profileImageURL || '/default-profile.png' %>" alt="Profile Image" class="profile-image">
-        <div class="profile-info">
-          <h1><%= profileUser.fullname %></h1>
-          <p><%= profileUser.bio || 'No bio provided' %></p>
-          <% if (user && !profileUser.isOwn) { %>
-            <button class="follow-btn <%= followStatus %>" data-user-id="<%= profileUser._id %>">
-              <%= followStatus === 'following' ? 'Following' : followStatus === 'requested' ? 'Requested' : 'Follow' %>
-            </button>
+  <div class="profile-header">
+    <img class="profile-img" src="<%= profileUser.profileImageURL %>" alt="<%= profileUser.fullname %>">
+    <div class="profile-info">
+      <h2><%= profileUser.fullname %></h2>
+      <p><%= profileUser.bio || 'No bio yet.' %></p>
+      <div class="profile-followers">
+        <i class="fas fa-users"></i> <%= profileUser.followers.length %> Followers
+      </div>
+      <% if (user && user._id.toString() !== profileUser._id.toString()) { %>
+        <div class="profile-actions">
+          <% if (isFollowing) { %>
+            <button class="btn" disabled>Following</button>
+          <% } else { %>
+            <form action="/profile/follow/<%= profileUser._id %>" method="POST" style="display:inline;">
+              <button class="btn"><i class="fas fa-user-plus"></i> Follow</button>
+            </form>
           <% } %>
         </div>
-      </div>
-
-      <div class="stats">
-        <div class="followers-count" onclick="showPopup('followers-popup')">
-          <strong><%= profileUser.followers.length %></strong> Followers
-        </div>
-        <div class="following-count" onclick="showPopup('following-popup')">
-          <strong><%= profileUser.following.length %></strong> Following
-        </div>
-        <div><strong><%= blogs.length %></strong> Blogs</div>
-      </div>
-
-      <% if (commonFollowers.length > 0) { %>
-        <p>Followed by <%= commonFollowers.map(f => f.fullname).join(', ') %></p>
       <% } %>
-
-      <div class="blogs-section">
-        <h2>Blogs</h2>
-        <% if (!canViewContent) { %>
-          <p class="private-message">This account is private. Follow to see their posts.</p>
-        <% } else if (blogs.length === 0) { %>
-          <p>No blogs posted yet.</p>
-        <% } else { %>
-          <% blogs.forEach(blog => { %>
-            <div class="blog-card" data-blog-id="<%= blog._id %>">
-              <div class="toggle-menu">
-                <i class="fas fa-ellipsis-v"></i>
-                <div class="toggle-menu-content">
-                  <% if (user && profileUser.isOwn) { %>
-                    <button class="delete-blog-btn">Delete</button>
-                  <% } %>
-                  <button class="share-blog-btn">Share</button>
-                </div>
-              </div>
-              <h3><%= blog.title %></h3>
-              <p><%= blog.body.substring(0, 100) %>...</p>
-              <p><strong>By:</strong> <%= blog.createdBy.fullname %> | <strong>Likes:</strong> <%= blog.likes.length %> | <strong>Comments:</strong> <%= blog.totalComments %></p>
-              <% if (canViewContent && user && (isFollowing || profileUser.isOwn)) { %>
-                <div class="blog-actions">
-                  <button class="like-btn" data-liked="<%= blog.likes.some(l => l._id.equals(user._id)) ? 'true' : 'false' %>">
-                    <i class="fas fa-heart <%= blog.likes.some(l => l._id.equals(user._id)) ? 'liked' : '' %>"></i> Like
-                  </button>
-                  <button class="comment-btn">Comment</button>
-                </div>
-                <div class="comment-section" style="display: none;">
-                  <div class="comment-input">
-                    <input type="text" class="comment-text" placeholder="Write a comment...">
-                    <button class="submit-comment">Post</button>
-                  </div>
-                  <% blog.comments.forEach(comment => { %>
-                    <div class="comment" data-comment-id="<%= comment._id %>">
-                      <p><strong><%= comment.createdBy.fullname %></strong>: <%= comment.content %></p>
-                      <button class="reply-btn">Reply</button>
-                      <div class="reply-section" style="display: none;">
-                        <div class="comment-input">
-                          <input type="text" class="reply-text" placeholder="Write a reply...">
-                          <button class="submit-reply">Post</button>
-                        </div>
-                      </div>
-                      <% comment.replies.forEach(reply => { %>
-                        <div class="reply" data-reply-id="<%= reply._id %>">
-                          <p><strong><%= reply.createdBy.fullname %></strong>: <%= reply.content %></p>
-                        </div>
-                      <% }); %>
-                    </div>
-                  <% }); %>
-                </div>
-              <% } %>
+    </div>
+  </div>
+  <!-- BLOG LIST -->
+  <div class="blog-list">
+    <% 
+      const isSelf = user && (user._id.toString() === profileUser._id.toString());
+      const canViewBlogs = isSelf || isFollowing || !profileUser.isPrivate;
+    %>
+    <% if (canViewBlogs) { %>
+      <h2 style="color:#f1c40f; text-align:center; margin-bottom:2rem;">Blogs by <%= profileUser.fullname %></h2>
+      <% if (blogs.length === 0) { %>
+        <div style="text-align:center; color:#b2bec3;">No blogs yet.</div>
+      <% } %>
+      <% blogs.forEach(function(blog) { %>
+        <div class="blog-card" id="blog-<%= blog._id %>">
+          <% if (blog.coverImage) { %>
+            <img class="blog-cover" src="<%= blog.coverImage %>" alt="Cover Image">
+          <% } %>
+          <div class="blog-content">
+            <div class="blog-title"><%= blog.title %></div>
+            <div class="blog-desc"><%= blog.description %></div>
+            <div class="blog-actions">
+              <form class="like-form" data-blogid="<%= blog._id %>" method="POST" action="/blog/<%= blog._id %>/like" style="display:inline;">
+                <button type="button" class="like-btn <%= blog.likedByCurrentUser ? 'liked' : '' %>">
+                  <i class="fa<%= blog.likedByCurrentUser ? 's' : 'r' %> fa-heart"></i>
+                </button>
+                <span><%= blog.likes.length %></span>
+              </form>
+              <button class="comment-btn" onclick="toggleComments('<%= blog._id %>')"><i class="far fa-comment"></i></button>
+              <span><%= blog.comments.length %></span>
             </div>
-          <% }); %>
-        <% } %>
-      </div>
-
-      <!-- Followers Popup -->
-      <div class="popup followers-popup">
-        <h3>Followers</h3>
-        <button class="close-btn close-followers" aria-label="Close Followers Popup">
-          <i class="fas fa-times"></i>
-        </button>
-        <% if (profileUser.followers.length > 0) { %>
-          <% profileUser.followers.forEach(follower => { %>
-            <p><%= follower.fullname %></p>
-          <% }); %>
-        <% } else { %>
-          <p>No followers to show.</p>
-        <% } %>
-      </div>
-
-      <!-- Following Popup -->
-      <div class="popup following-popup">
-        <h3>Following</h3>
-        <button class="close-btn close-following" aria-label="Close Following Popup">
-          <i class="fas fa-times"></i>
-        </button>
-        <% if (profileUser.following.length > 0) { %>
-          <% profileUser.following.forEach(following => { %>
-            <p><%= following.fullname %></p>
-          <% }); %>
-        <% } else { %>
-          <p>Not following anyone.</p>
-        <% } %>
-      </div>
-
-      <div class="popup-overlay"></div>
+          </div>
+          <!-- COMMENTS SECTION -->
+          <div class="comments-section" id="comments-<%= blog._id %>" style="display:none;">
+            <form class="comment-form" data-blogid="<%= blog._id %>" method="POST" action="/comment/add">
+              <input type="hidden" name="blogId" value="<%= blog._id %>">
+              <textarea name="comment" rows="2" placeholder="Write a comment..." required></textarea>
+              <button type="submit"><i class="fas fa-paper-plane"></i> Post</button>
+            </form>
+            <div class="comments-list">
+              <% blog.comments.forEach(function(comment) { %>
+                <div class="comment" id="comment-<%= comment._id %>">
+                  <span class="comment-user"><img src="<%= comment.createdBy.profileImageURL %>" style="width:28px; height:28px; border-radius:50%; vertical-align:middle; margin-right:6px;"> <%= comment.createdBy.fullname %></span>
+                  <div class="comment-body"><%= comment.body %></div>
+                  <button class="reply-btn" onclick="showReplyForm('<%= comment._id %>')"><i class="fas fa-reply"></i> Reply</button>
+                  <!-- REPLY FORM -->
+                  <form class="reply-form" id="reply-form-<%= comment._id %>" data-commentid="<%= comment._id %>" method="POST" action="/comment/reply" style="display:none;">
+                    <input type="hidden" name="blogId" value="<%= blog._id %>">
+                    <input type="hidden" name="parent" value="<%= comment._id %>">
+                    <textarea name="reply" rows="1" placeholder="Write a reply..." required></textarea>
+                    <button type="submit"><i class="fas fa-paper-plane"></i></button>
+                  </form>
+                  <!-- REPLIES -->
+                  <% if (comment.replies && comment.replies.length) { %>
+                    <% comment.replies.forEach(function(reply) { %>
+                      <div class="reply">
+                        <span class="comment-user"><img src="<%= reply.createdBy.profileImageURL %>" style="width:22px; height:22px; border-radius:50%; vertical-align:middle; margin-right:4px;"> <%= reply.createdBy.fullname %></span>
+                        <div class="comment-body"><%= reply.body %></div>
+                      </div>
+                    <% }) %>
+                  <% } %>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
     <% } else { %>
-      <p class="error">User not found.</p>
+      <div style="text-align:center; margin:3rem 0; color:#ff7675; font-size:1.2rem;">
+        <i class="fas fa-lock"></i> Only followers can view <%= profileUser.fullname %>'s blogs.
+      </div>
     <% } %>
   </div>
-
   <script>
-    function showPopup(popupClass) {
-      const popup = document.querySelector(`.${popupClass}`);
-      const overlay = document.querySelector('.popup-overlay');
-      if (popup && overlay) {
-        popup.style.display = 'block';
-        overlay.style.display = 'block';
-      }
+    // Toggle comments section
+    function toggleComments(blogId) {
+      var el = document.getElementById('comments-' + blogId);
+      el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
     }
-
-    function hidePopup(popupClass) {
-      const popup = document.querySelector(`.${popupClass}`);
-      const overlay = document.querySelector('.popup-overlay');
-      if (popup && overlay) {
-        popup.style.display = 'none';
-        overlay.style.display = 'none';
-      }
+    // Show reply form
+    function showReplyForm(commentId) {
+      var form = document.getElementById('reply-form-' + commentId);
+      form.style.display = (form.style.display === 'none' || !form.style.display) ? 'flex' : 'none';
     }
-
-    document.querySelectorAll('.close-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const popup = btn.closest('.popup');
-        hidePopup(popup.classList[1]);
-      });
-    });
-
-    document.querySelector('.popup-overlay')?.addEventListener('click', () => {
-      document.querySelectorAll('.popup').forEach(popup => {
-        popup.style.display = 'none';
-      });
-      document.querySelector('.popup-overlay').style.display = 'none';
-    });
-
-    document.querySelector('.follow-btn')?.addEventListener('click', async (e) => {
-      const button = e.target;
-      const userId = button.getAttribute('data-user-id');
-      let currentStatus = 'follow';
-      if (button.classList.contains('following')) currentStatus = 'following';
-      if (button.classList.contains('requested')) currentStatus = 'requested';
-      let endpoint = '';
-      if (currentStatus === 'following') {
-        endpoint = `/user/unfollow/${userId}`;
-      } else if (currentStatus === 'requested') {
-        endpoint = `/user/cancel-follow/${userId}`;
-      } else {
-        endpoint = `/user/follow/${userId}`;
-      }
-      
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const data = await response.json();
-        if (data.success) {
-          button.classList.remove('following', 'requested');
-          if (data.newStatus === 'following') {
-            button.classList.add('following');
-            button.textContent = 'Following';
-          } else if (data.newStatus === 'requested') {
-            button.classList.add('requested');
-            button.textContent = 'Requested';
-          } else {
-            button.textContent = 'Follow';
-          }
-          location.reload();
-        } else {
-          alert(data.error || 'Error processing follow request');
-        }
-      } catch (err) {
-        console.error('Follow error:', err);
-        alert('Error processing follow request');
-      }
-    });
-
-    // Toggle Menu for Delete/Share
-    document.querySelectorAll('.toggle-menu').forEach(menu => {
-      menu.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const content = menu.querySelector('.toggle-menu-content');
-        content.classList.toggle('active');
-      });
-    });
-
-    // Close toggle menu when clicking outside
-    document.addEventListener('click', (e) => {
-      document.querySelectorAll('.toggle-menu-content.active').forEach(content => {
-        if (!content.contains(e.target) && !e.target.closest('.toggle-menu')) {
-          content.classList.remove('active');
-        }
-      });
-    });
-
-    // Delete Blog
-    document.querySelectorAll('.delete-blog-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const blogCard = e.target.closest('.blog-card');
-        const blogId = blogCard.getAttribute('data-blog-id');
-        if (confirm('Are you sure you want to delete this blog?')) {
-          try {
-            const response = await fetch(`/blog/delete/${blogId}`, {
-              method: 'DELETE',
-              headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const data = await response.json();
-            if (data.success) {
-              blogCard.remove();
-              alert('Blog deleted successfully');
-            } else {
-              alert(data.error || 'Error deleting blog');
+    // Like AJAX
+    document.querySelectorAll('.like-form').forEach(form => {
+      form.addEventListener('click', function(e) {
+        if(e.target.closest('.like-btn')) {
+          e.preventDefault();
+          const blogId = form.getAttribute('data-blogid');
+          fetch(`/blog/${blogId}/like`, { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'} })
+          .then(r=>r.json()).then(data=>{
+            if(data.success) {
+              const btn = form.querySelector('.like-btn');
+              btn.classList.toggle('liked', data.liked);
+              btn.innerHTML = `<i class="fa${data.liked ? 's' : 'r'} fa-heart"></i>`;
+              form.querySelector('span').textContent = data.likesCount;
             }
-          } catch (err) {
-            console.error('Delete error:', err);
-            alert('Error deleting blog');
-          }
+          });
         }
       });
     });
-
-    // Share Blog
-    document.querySelectorAll('.share-blog-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const blogCard = e.target.closest('.blog-card');
-        const blogId = blogCard.getAttribute('data-blog-id');
-        const shareUrl = `${window.location.origin}/blog/${blogId}`;
-        navigator.clipboard.writeText(shareUrl).then(() => {
-          alert('Blog URL copied to clipboard!');
-        }).catch(err => {
-          console.error('Share error:', err);
-          alert('Error copying URL');
+    // Comment AJAX
+    document.querySelectorAll('.comment-form').forEach(form => {
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        const blogId = form.getAttribute('data-blogid');
+        const textarea = form.querySelector('textarea');
+        fetch(form.action, {
+          method:'POST',
+          headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'},
+          body:`blogId=${blogId}&comment=${encodeURIComponent(textarea.value)}`
+        }).then(r=>r.json()).then(data=>{
+          if(data.success) location.reload(); // You can optimize to update DOM without reload.
         });
       });
     });
-
-    // Like Blog
-    document.querySelectorAll('.like-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const blogCard = e.target.closest('.blog-card');
-        const blogId = blogCard.getAttribute('data-blog-id');
-        const isLiked = btn.getAttribute('data-liked') === 'true';
-        const endpoint = isLiked ? `/blog/unlike/${blogId}` : `/blog/like/${blogId}`;
-        try {
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-          });
-          const data = await response.json();
-          if (data.success) {
-            const likeCount = blogCard.querySelector('p strong:nth-child(2)');
-            const currentLikes = parseInt(likeCount.textContent);
-            likeCount.textContent = isLiked ? currentLikes - 1 : currentLikes + 1;
-            btn.setAttribute('data-liked', isLiked ? 'false' : 'true');
-            const heart = btn.querySelector('i');
-            heart.classList.toggle('liked');
-            btn.textContent = isLiked ? 'Like' : 'Unlike';
-            heart.className = `fas fa-heart ${isLiked ? '' : 'liked'}`;
-          } else {
-            alert(data.error || 'Error processing like');
-          }
-        } catch (err) {
-          console.error('Like error:', err);
-          alert('Error processing like');
-        }
-      });
-    });
-
-    // Comment Toggle
-    document.querySelectorAll('.comment-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const blogCard = e.target.closest('.blog-card');
-        const commentSection = blogCard.querySelector('.comment-section');
-        commentSection.style.display = commentSection.style.display === 'none' ? 'block' : 'none';
-      });
-    });
-
-    // Submit Comment
-    document.querySelectorAll('.submit-comment').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const blogCard = e.target.closest('.blog-card');
-        const blogId = blogCard.getAttribute('data-blog-id');
-        const commentText = blogCard.querySelector('.comment-text').value.trim();
-        if (!commentText) {
-          alert('Comment cannot be empty');
-          return;
-        }
-        try {
-          const response = await fetch(`/blog/comment/${blogId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify({ content: commentText })
-          });
-          const data = await response.json();
-          if (data.success) {
-            const commentSection = blogCard.querySelector('.comment-section');
-            const commentDiv = document.createElement('div');
-            commentDiv.className = 'comment';
-            commentDiv.setAttribute('data-comment-id', data.commentId);
-            commentDiv.innerHTML = `<p><strong>${data.createdBy.fullname}</strong>: ${commentText}</p><button class="reply-btn">Reply</button><div class="reply-section" style="display: none;"><div class="comment-input"><input type="text" class="reply-text" placeholder="Write a reply..."><button class="submit-reply">Post</button></div></div>`;
-            commentSection.insertBefore(commentDiv, commentSection.querySelector('.comment-input'));
-            blogCard.querySelector('.comment-text').value = '';
-            const commentCount = blogCard.querySelector('p strong:nth-child(4)');
-            commentCount.textContent = parseInt(commentCount.textContent) + 1;
-            // Re-attach reply event listeners
-            commentDiv.querySelector('.reply-btn').addEventListener('click', handleReplyToggle);
-            commentDiv.querySelector('.submit-reply').addEventListener('click', handleReplySubmit);
-          } else {
-            alert(data.error || 'Error posting comment');
-          }
-        } catch (err) {
-          console.error('Comment error:', err);
-          alert('Error posting comment');
-        }
-      });
-    });
-
-    // Reply Toggle
-    function handleReplyToggle(e) {
-      const comment = e.target.closest('.comment');
-      const replySection = comment.querySelector('.reply-section');
-      replySection.style.display = replySection.style.display === 'none' ? 'block' : 'none';
-    }
-
-    document.querySelectorAll('.reply-btn').forEach(btn => {
-      btn.addEventListener('click', handleReplyToggle);
-    });
-
-    // Submit Reply
-    function handleReplySubmit(e) {
-      const comment = e.target.closest('.comment');
-      const blogCard = e.target.closest('.blog-card');
-      const commentId = comment.getAttribute('data-comment-id');
-      const replyText = comment.querySelector('.reply-text').value.trim();
-      if (!replyText) {
-        alert('Reply cannot be empty');
-        return;
-      }
-      fetch(`/blog/reply/${commentId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        body: JSON.stringify({ content: replyText })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const replySection = comment.querySelector('.reply-section');
-            const replyDiv = document.createElement('div');
-            replyDiv.className = 'reply';
-            replyDiv.setAttribute('data-reply-id', data.replyId);
-            replyDiv.innerHTML = `<p><strong>${data.createdBy.fullname}</strong>: ${replyText}</p>`;
-            comment.insertBefore(replyDiv, replySection);
-            comment.querySelector('.reply-text').value = '';
-            const commentCount = blogCard.querySelector('p strong:nth-child(4)');
-            commentCount.textContent = parseInt(commentCount.textContent) + 1;
-          } else {
-            alert(data.error || 'Error posting reply');
-          }
-        })
-        .catch(err => {
-          console.error('Reply error:', err);
-          alert('Error posting reply');
+    // Reply AJAX
+    document.querySelectorAll('.reply-form').forEach(form => {
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        const blogId = form.querySelector('input[name="blogId"]').value;
+        const parent = form.querySelector('input[name="parent"]').value;
+        const textarea = form.querySelector('textarea');
+        fetch(form.action, {
+          method:'POST',
+          headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'},
+          body:`blogId=${blogId}&parent=${parent}&reply=${encodeURIComponent(textarea.value)}`
+        }).then(r=>r.json()).then(data=>{
+          if(data.success) location.reload(); // You can optimize to update DOM without reload.
         });
-    }
-
-    document.querySelectorAll('.submit-reply').forEach(btn => {
-      btn.addEventListener('click', handleReplySubmit);
+      });
     });
   </script>
 </body>
