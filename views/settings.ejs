@@ -142,40 +142,11 @@
       background-color: #f8d7da;
       color: #721c24;
     }
-    .toggle-switch {
+    .toggle-container {
       display: flex;
       align-items: center;
       gap: 1rem;
-    }
-    .toggle-switch label {
-      color: #ecf0f1;
-    }
-    input[type="checkbox"] {
-      width: 50px;
-      height: 25px;
-      appearance: none;
-      background: #e74c3c;
-      border-radius: 25px;
-      position: relative;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    input[type="checkbox"]:checked {
-      background: #2ecc71;
-    }
-    input[type="checkbox"]::before {
-      content: '';
-      position: absolute;
-      width: 21px;
-      height: 21px;
-      border-radius: 50%;
-      background: white;
-      top: 2px;
-      left: 2px;
-      transition: left 0.3s;
-    }
-    input[type="checkbox"]:checked::before {
-      left: 27px;
+      justify-content: center;
     }
     @media (max-width: 768px) {
       .container { margin: 1rem; padding: 1rem; }
@@ -237,7 +208,7 @@
       </form>
     </div>
 
-    <!-- Privacy/Security Popup (updated with toggle switch) -->
+    <!-- Privacy/Security Popup (updated with custom toggle) -->
     <div class="popup privacy-security-popup">
       <h3 style="color: #ecf0f1; margin-bottom: 1rem;">Privacy/Security</h3>
       <button class="close-btn close-privacy-security" aria-label="Close Privacy/Security Popup">
@@ -250,10 +221,14 @@
         gap: 1rem;
       ">
         <p style="color: #ecf0f1;">Account Privacy:</p>
-        <div class="toggle-switch">
-          <label for="privacy-toggle">Private Account</label>
-          <input type="checkbox" id="privacy-toggle" name="isPrivate" <%= user.isPrivate ? 'checked' : '' %>>
+        <div class="toggle-container">
+          <span>Public</span>
+          <label for="privacy-toggle" style="cursor:pointer;">
+            <i class="fa-solid <%= user.isPrivate ? 'fa-toggle-on' : 'fa-toggle-off' %>" id="toggle-icon" style="font-size:1.5rem; color:<%= user.isPrivate ? '#2ecc71' : '#e74c3c' %>;"></i>
+          </label>
+          <span>Private</span>
         </div>
+        <input type="checkbox" id="privacy-toggle" name="isPrivate" <%= user.isPrivate ? 'checked' : '' %> style="display:none;">
         <button type="submit" id="privacy-submit">
           <i class="fas fa-save"></i> Update Privacy
         </button>
@@ -487,6 +462,21 @@
           }
         });
       }
+
+      // Custom toggle handler
+      document.querySelector('.toggle-container label').addEventListener('click', (e) => {
+        e.preventDefault();
+        const checkbox = document.getElementById('privacy-toggle');
+        checkbox.checked = !checkbox.checked;
+        const icon = document.getElementById('toggle-icon');
+        if (checkbox.checked) {
+          icon.classList.replace('fa-toggle-off', 'fa-toggle-on');
+          icon.style.color = '#2ecc71';
+        } else {
+          icon.classList.replace('fa-toggle-on', 'fa-toggle-off');
+          icon.style.color = '#e74c3c';
+        }
+      });
     });
   </script>
 </body>
