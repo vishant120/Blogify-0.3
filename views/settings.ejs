@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings | Blogify</title>
+  <title>Account Settings | Blogify</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <style>
     body {
@@ -18,464 +18,203 @@
       padding: 2rem;
       background-color: #2c3e50;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,.3);
     }
-    .settings-section {
-      margin-bottom: 2rem;
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+      color: #f1c40f;
+      text-align: center;
     }
-    .settings-section h2 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      color: #ecf0f1;
-    }
-    .settings-action {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
+    .success_msg, .error_msg {
       padding: 1rem;
-      background-color: #34495e;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    .settings-action:hover {
-      background-color: #3e5a75;
-    }
-    .settings-action.delete-account-btn {
-      background-color: #e74c3c;
-    }
-    .settings-action.delete-account-btn:hover {
-      background-color: #c0392b;
-    }
-    .popup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: #2c3e50;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      z-index: 2000;
-      max-width: 400px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      animation: fadeIn 0.3s ease-in-out;
-    }
-    .popup-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 1500;
-    }
-    .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      color: #ecf0f1;
-      font-size: 1.2rem;
-      cursor: pointer;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translate(-50%, -60%); }
-      to { opacity: 1; transform: translate(-50%, -50%); }
-    }
-    input, textarea {
-      padding: 0.75rem;
-      border: 1px solid #34495e;
-      border-radius: 4px;
-      font-size: 1rem;
-      background-color: #34495e;
-      color: #ecf0f1;
-      width: 100%;
-      transition: border-color 0.3s;
-    }
-    input:focus, textarea:focus {
-      border-color: #3498db;
-    }
-    button {
-      padding: 0.75rem;
-      background-color: #3498db;
-      color: #ecf0f1;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background-color 0.3s, transform 0.2s;
-    }
-    button.delete-btn {
-      background-color: #e74c3c;
-    }
-    button.delete-btn:hover {
-      background-color: #c0392b;
-      transform: scale(1.05);
-    }
-    button:hover {
-      background-color: #2980b9;
-      transform: scale(1.05);
-    }
-    button:disabled {
-      background-color: #7f8c8d;
-      cursor: not-allowed;
-      transform: none;
-    }
-    .message {
-      display: none;
-      padding: 0.75rem;
+      border-radius: 5px;
       margin-bottom: 1rem;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .success_msg { background: #27ae60; color: #fff; }
+    .error_msg { background: #e74c3c; color: #fff; }
+    form {
+      margin-bottom: 2rem;
+      background: #233146;
+      padding: 1.5rem;
+      border-radius: 7px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: .5rem;
+      color: #f1c40f;
+    }
+    input[type="text"], input[type="email"], textarea {
+      width: 100%;
+      padding: 0.7rem;
+      border: none;
       border-radius: 4px;
-      font-size: 0.9rem;
+      margin-bottom: 1.2rem;
+      background: #34495e;
+      color: #ecf0f1;
+      font-size: 1rem;
     }
-    .success {
-      background-color: #d4edda;
-      color: #155724;
+    input[type="file"] {
+      margin-bottom: 1.2rem;
+      color: #f1c40f;
     }
-    .error {
-      background-color: #f8d7da;
-      color: #721c24;
+    button, .privacy-switch label {
+      background: #f1c40f;
+      color: #1a2634;
+      padding: 0.7rem 1.5rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: background 0.2s;
     }
-    .toggle-container {
+    button:hover, .privacy-switch label:hover {
+      background: #e1b70e;
+    }
+    .privacy-switch {
       display: flex;
       align-items: center;
       gap: 1rem;
-      justify-content: center;
+      margin-bottom: 1.2rem;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 54px;
+      height: 28px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #fff;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #f1c40f;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .privacy-switch span {
+      font-size: 1rem;
+      color: #f1c40f;
+      font-weight: bold;
     }
     @media (max-width: 768px) {
       .container { margin: 1rem; padding: 1rem; }
-      .popup { width: 95%; }
+      h1 { font-size: 1.5rem; }
     }
   </style>
 </head>
 <body>
   <%- include('partials/header', { user }) %>
-
   <div class="container">
+    <h1>Account Settings</h1>
     <% if (success_msg) { %>
-      <p class="message success" style="display: block;">
-        <i class="fas fa-check-circle"></i> <%= success_msg %>
-      </p>
+      <div class="success_msg"><i class="fas fa-check-circle"></i> <%= success_msg %></div>
     <% } %>
     <% if (error_msg) { %>
-      <p class="message error" style="display: block;">
-        <i class="fas fa-exclamation-circle"></i> <%= error_msg %>
-      </p>
+      <div class="error_msg"><i class="fas fa-exclamation-circle"></i> <%= error_msg %></div>
     <% } %>
 
-    <div class="settings-section">
-      <h2>Settings</h2>
-      <div class="settings-action update-profile-btn">
-        <i class="fas fa-user-edit"></i>
-        <span>Update Profile</span>
+    <!-- Profile Update -->
+    <form action="/settings/update-profile" method="POST" enctype="multipart/form-data">
+      <label for="fullname">Full Name</label>
+      <input type="text" id="fullname" name="fullname" value="<%= user.fullname %>" required minlength="2" maxlength="50">
+
+      <label for="bio">Bio</label>
+      <textarea id="bio" name="bio" rows="3" maxlength="160"><%= user.bio || '' %></textarea>
+
+      <label for="profileImage">Profile Image</label>
+      <input type="file" id="profileImage" name="profileImage" accept="image/*">
+      <% if (user.profileImageURL) { %>
+        <img src="<%= user.profileImageURL %>" alt="Current Profile" style="width:60px;height:60px;border-radius:50%;margin-bottom:.5rem;">
+      <% } %>
+      <br>
+      <button type="submit"><i class="fas fa-save"></i> Update Profile</button>
+    </form>
+
+    <!-- Privacy Switch -->
+    <form id="privacy-form" action="/settings/update-privacy" method="POST">
+      <div class="privacy-switch">
+        <label for="isPrivate">Private Account</label>
+        <label class="switch">
+          <input type="checkbox" id="isPrivate" name="isPrivate" value="true" <%= user.isPrivate ? 'checked' : '' %>>
+          <span class="slider"></span>
+        </label>
+        <span id="privacy-label">
+          <%= user.isPrivate ? "Your account is PRIVATE" : "Your account is PUBLIC" %>
+        </span>
       </div>
-      <div class="settings-action privacy-security-btn">
-        <i class="fas fa-shield-alt"></i>
-        <span>Privacy/Security</span>
-      </div>
-      <div class="settings-action delete-account-btn">
-        <i class="fas fa-trash-alt"></i>
-        <span>Delete Account</span>
-      </div>
-    </div>
+      <button type="submit"><i class="fas fa-user-secret"></i> Update Privacy</button>
+    </form>
 
-    <!-- Update Profile Popup -->
-    <div class="popup update-profile-popup">
-      <h3 style="color: #ecf0f1; margin-bottom: 1rem;">Update Profile</h3>
-      <button class="close-btn close-update-profile" aria-label="Close Update Profile Popup">
-        <i class="fas fa-times"></i>
-      </button>
-      <form action="/settings/update-profile" method="POST" enctype="multipart/form-data" style="
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      ">
-        <label for="fullname" style="color: #ecf0f1;">Username</label>
-        <input type="text" id="fullname" name="fullname" value="<%= user.fullname %>" aria-label="Username" required>
-        <label for="bio" style="color: #ecf0f1;">Bio</label>
-        <textarea id="bio" name="bio" aria-label="Bio" style="resize: vertical; min-height: 100px;"><%= user.bio || '' %></textarea>
-        <label for="profileImage" style="color: #ecf0f1;">Profile Image</label>
-        <input type="file" id="profileImage" name="profileImage" accept="image/*" aria-label="Profile Image">
-        <button type="submit">
-          <i class="fas fa-save"></i> Update Profile
-        </button>
-      </form>
-    </div>
-
-    <!-- Privacy/Security Popup (updated with custom toggle) -->
-    <div class="popup privacy-security-popup">
-      <h3 style="color: #ecf0f1; margin-bottom: 1rem;">Privacy/Security</h3>
-      <button class="close-btn close-privacy-security" aria-label="Close Privacy/Security Popup">
-        <i class="fas fa-times"></i>
-      </button>
-      <p id="privacy-message" class="message" aria-live="polite"></p>
-      <form id="privacy-form" style="
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      ">
-        <p style="color: #ecf0f1;">Account Privacy:</p>
-        <div class="toggle-container">
-          <span>Public</span>
-          <label for="privacy-toggle" style="cursor:pointer;">
-            <i class="fa-solid <%= user.isPrivate ? 'fa-toggle-on' : 'fa-toggle-off' %>" id="toggle-icon" style="font-size:1.5rem; color:<%= user.isPrivate ? '#2ecc71' : '#e74c3c' %>;"></i>
-          </label>
-          <span>Private</span>
-        </div>
-        <input type="checkbox" id="privacy-toggle" name="isPrivate" <%= user.isPrivate ? 'checked' : '' %> style="display:none;">
-        <button type="submit" id="privacy-submit">
-          <i class="fas fa-save"></i> Update Privacy
-        </button>
-      </form>
-      <hr style="margin: 1rem 0;">
-      <p id="password-message" class="message" aria-live="polite"></p>
-      <form id="password-form" style="
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      ">
-        <p style="color: #ecf0f1;">Click below to receive a password reset link via email.</p>
-        <button type="submit" id="password-submit">
-          <i class="fas fa-paper-plane"></i> Send Password Reset Link
-        </button>
-      </form>
-    </div>
-
-    <!-- Delete Account Popup -->
-    <div class="popup delete-account-popup">
-      <h3 style="color: #ecf0f1; margin-bottom: 1rem;">Delete Account</h3>
-      <button class="close-btn close-delete-account" aria-label="Close Delete Account Popup">
-        <i class="fas fa-times"></i>
-      </button>
-      <p id="delete-message" class="message" aria-live="polite"></p>
-      <form id="delete-account-form" style="
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      ">
-        <p style="color: #ecf0f1;">Enter your password to confirm account deletion. This action is irreversible.</p>
-        <label for="delete-password" style="color: #ecf0f1;">Password</label>
-        <input type="password" id="delete-password" name="password" aria-label="Password" required>
-        <button type="submit" id="delete-submit" class="delete-btn">
-          <i class="fas fa-trash-alt"></i> Delete Account
-        </button>
-      </form>
-    </div>
-
-    <div class="popup-overlay"></div>
+    <!-- Password Reset Link -->
+    <form action="/settings/request-password-reset" method="POST">
+      <button type="submit"><i class="fas fa-key"></i> Request Password Reset</button>
+    </form>
   </div>
 
   <script>
+    // Optional: Update privacy label on switch change
     document.addEventListener('DOMContentLoaded', () => {
-      const updateProfileBtn = document.querySelector('.update-profile-btn');
-      const privacySecurityBtn = document.querySelector('.privacy-security-btn');
-      const deleteAccountBtn = document.querySelector('.delete-account-btn');
-      const updateProfilePopup = document.querySelector('.update-profile-popup');
-      const privacySecurityPopup = document.querySelector('.privacy-security-popup');
-      const deleteAccountPopup = document.querySelector('.delete-account-popup');
-      const closeUpdateProfile = document.querySelector('.close-update-profile');
-      const closePrivacySecurity = document.querySelector('.close-privacy-security');
-      const closeDeleteAccount = document.querySelector('.close-delete-account');
-      const overlay = document.querySelector('.popup-overlay');
-      const passwordForm = document.querySelector('#password-form');
-      const passwordMessage = document.querySelector('#password-message');
-      const passwordSubmit = document.querySelector('#password-submit');
-      const privacyForm = document.querySelector('#privacy-form');
-      const privacyMessage = document.querySelector('#privacy-message');
-      const privacySubmit = document.querySelector('#privacy-submit');
-      const deleteAccountForm = document.querySelector('#delete-account-form');
-      const deleteMessage = document.querySelector('#delete-message');
-      const deleteSubmit = document.querySelector('#delete-submit');
+      const privacySwitch = document.getElementById('isPrivate');
+      const privacyLabel = document.getElementById('privacy-label');
+      const privacyForm = document.getElementById('privacy-form');
 
-      const showPopup = (popup) => {
-        if (popup) {
-          popup.style.display = 'block';
-          overlay.style.display = 'block';
-          const focusableEls = popup.querySelectorAll('a, button, input, textarea');
-          if (focusableEls.length > 0) focusableEls[0].focus();
-        }
-      };
-
-      const hidePopup = (popup) => {
-        if (popup) popup.style.display = 'none';
-        overlay.style.display = 'none';
-      };
-
-      const showMessage = (element, message, type) => {
-        element.textContent = message;
-        element.className = `message ${type}`;
-        element.style.display = 'block';
-      };
-
-      const setLoading = (button, isLoading) => {
-        button.disabled = isLoading;
-        button.style.opacity = isLoading ? '0.7' : '1';
-        button.innerHTML = isLoading
-          ? '<i class="fas fa-spinner fa-spin"></i> Processing...'
-          : button.classList.contains('delete-btn')
-          ? '<i class="fas fa-trash-alt"></i> Delete Account'
-          : button.id === 'password-submit'
-          ? '<i class="fas fa-paper-plane"></i> Send Password Reset Link'
-          : '<i class="fas fa-save"></i> Update Privacy';
-      };
-
-      // Update Profile Popup
-      if (updateProfileBtn && updateProfilePopup) {
-        updateProfileBtn.addEventListener('click', () => showPopup(updateProfilePopup));
-      }
-      if (closeUpdateProfile && updateProfilePopup) {
-        closeUpdateProfile.addEventListener('click', () => hidePopup(updateProfilePopup));
-      }
-
-      // Privacy/Security Popup
-      if (privacySecurityBtn && privacySecurityPopup) {
-        privacySecurityBtn.addEventListener('click', () => {
-          passwordForm.style.display = 'flex';
-          passwordMessage.style.display = 'none';
-          privacyMessage.style.display = 'none';
-          showPopup(privacySecurityPopup);
-        });
-      }
-      if (closePrivacySecurity && privacySecurityPopup) {
-        closePrivacySecurity.addEventListener('click', () => hidePopup(privacySecurityPopup));
-      }
-
-      // Delete Account Popup
-      if (deleteAccountBtn && deleteAccountPopup) {
-        deleteAccountBtn.addEventListener('click', () => {
-          deleteAccountForm.style.display = 'flex';
-          deleteMessage.style.display = 'none';
-          showPopup(deleteAccountPopup);
-        });
-      }
-      if (closeDeleteAccount && deleteAccountPopup) {
-        closeDeleteAccount.addEventListener('click', () => hidePopup(deleteAccountPopup));
-      }
-
-      // Overlay and Escape Key Handling
-      overlay.addEventListener('click', () => {
-        hidePopup(updateProfilePopup);
-        hidePopup(privacySecurityPopup);
-        hidePopup(deleteAccountPopup);
+      privacySwitch.addEventListener('change', function() {
+        privacyLabel.textContent = this.checked
+          ? "Your account is PRIVATE"
+          : "Your account is PUBLIC";
       });
 
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          hidePopup(updateProfilePopup);
-          hidePopup(privacySecurityPopup);
-          hidePopup(deleteAccountPopup);
-        }
-      });
-
-      // Password Reset Form Submission
-      if (passwordForm) {
-        passwordForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          setLoading(passwordSubmit, true);
-          try {
-            const response = await fetch('/settings/request-password-reset', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({}),
-            });
-            const data = await response.json();
-            setLoading(passwordSubmit, false);
-            if (data.success) {
-              showMessage(passwordMessage, 'Password reset link sent to your email', 'success');
-              setTimeout(() => hidePopup(privacySecurityPopup), 2000);
-            } else {
-              showMessage(passwordMessage, data.error || 'Error sending password reset link', 'error');
-            }
-          } catch (err) {
-            setLoading(passwordSubmit, false);
-            showMessage(passwordMessage, 'Error sending password reset link', 'error');
-            console.error('Fetch error:', err);
-          }
-        });
-      }
-
-      // Privacy Form Submission
-      if (privacyForm) {
-        privacyForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          setLoading(privacySubmit, true);
-          const isPrivate = document.querySelector('#privacy-toggle').checked;
-          if (!confirm('Are you sure you want to change your privacy setting?')) {
-            setLoading(privacySubmit, false);
-            return;
-          }
-          try {
-            const response = await fetch('/settings/update-privacy', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ isPrivate }),
-            });
-            const data = await response.json();
-            setLoading(privacySubmit, false);
-            if (data.success) {
-              showMessage(privacyMessage, `Account ${isPrivate ? 'private' : 'public'} success`, 'success');
-              setTimeout(() => location.reload(), 2000);
-            } else {
-              showMessage(privacyMessage, data.error || 'Error updating privacy', 'error');
-            }
-          } catch (err) {
-            setLoading(privacySubmit, false);
-            showMessage(privacyMessage, 'Error updating privacy', 'error');
-            console.error('Fetch error:', err);
-          }
-        });
-      }
-
-      // Delete Account Form Submission
-      if (deleteAccountForm) {
-        deleteAccountForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          setLoading(deleteSubmit, true);
-          const password = document.querySelector('#delete-password').value;
-
-          try {
-            const response = await fetch('/settings/delete-account', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ password }),
-            });
-            const data = await response.json();
-            setLoading(deleteSubmit, false);
-            if (data.success) {
-              showMessage(deleteMessage, 'Account deleted successfully. Redirecting...', 'success');
-              setTimeout(() => {
-                window.location.href = '/?success_msg=Account deleted successfully';
-              }, 2000);
-            } else {
-              showMessage(deleteMessage, data.error || 'Error deleting account', 'error');
-            }
-          } catch (err) {
-            setLoading(deleteSubmit, false);
-            showMessage(deleteMessage, 'Error deleting account', 'error');
-            console.error('Fetch error:', err);
-          }
-        });
-      }
-
-      // Custom toggle handler
-      document.querySelector('.toggle-container label').addEventListener('click', (e) => {
+      // Optional: AJAX for privacy, keep fallback for full form submit
+      privacyForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const checkbox = document.getElementById('privacy-toggle');
-        checkbox.checked = !checkbox.checked;
-        const icon = document.getElementById('toggle-icon');
-        if (checkbox.checked) {
-          icon.classList.replace('fa-toggle-off', 'fa-toggle-on');
-          icon.style.color = '#2ecc71';
-        } else {
-          icon.classList.replace('fa-toggle-on', 'fa-toggle-off');
-          icon.style.color = '#e74c3c';
-        }
+        fetch('/settings/update-privacy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: 'isPrivate=' + (privacySwitch.checked ? 'true' : '')
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            privacyLabel.textContent = privacySwitch.checked
+              ? "Your account is PRIVATE"
+              : "Your account is PUBLIC";
+            alert(data.message);
+          } else {
+            alert("Error: " + (data.error || "Failed to update privacy"));
+          }
+        })
+        .catch(() => {
+          alert("Failed to update privacy. Please try again.");
+        });
       });
     });
   </script>
