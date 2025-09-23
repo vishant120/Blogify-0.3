@@ -589,7 +589,7 @@
       <div class="popup followers-popup">
         <h3><i class="fas fa-users"></i> Followers</h3>
         <button class="close-btn close-followers" aria-label="Close Followers">
-          <i class="fas fa-times"></i>
+          <i class="fas fa-arrow-left"></i>
         </button>
         <% if (!profileUser.followers || profileUser.followers.length === 0) { %>
           <p style="color:var(--text-dim);">No followers yet.</p>
@@ -606,7 +606,7 @@
       <div class="popup following-popup">
         <h3><i class="fas fa-user-friends"></i> Following</h3>
         <button class="close-btn close-following" aria-label="Close Following">
-          <i class="fas fa-times"></i>
+          <i class="fas fa-arrow-left"></i>
         </button>
         <% if (!profileUser.following || profileUser.following.length === 0) { %>
           <p style="color:var(--text-dim);">Not following anyone yet.</p>
@@ -623,7 +623,7 @@
       <div class="popup common-popup">
         <h3><i class="fas fa-user-group"></i> Common Followers</h3>
         <button class="close-btn close-common" aria-label="Close Common Followers">
-          <i class="fas fa-times"></i>
+          <i class="fas fa-arrow-left"></i>
         </button>
         <% if (commonFollowers.length === 0) { %>
           <p style="color:var(--text-dim);">No common followers.</p>
@@ -734,9 +734,8 @@
                       <form action="/blog/<%= blog._id %>?_method=DELETE" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this blog?');">
                         <button type="submit" class="delete-btn"><i class="fas fa-trash"></i> Delete blog</button>
                       </form>
-                    <% } else { %>
-                      <button onclick="openShare('<%= blog._id %>')"><i class="fas fa-share"></i> Share blog</button>
                     <% } %>
+                    <button onclick="openShare('<%= blog._id %>')"><i class="fas fa-share"></i> Share blog</button>
                   </div>
                 </div>
                 <div id="likesModal-<%= blog._id %>" class="modal">
@@ -871,6 +870,7 @@
     <h3>Share Blog</h3>
     <div class="share-options">
       <button class="share-btn" id="share-facebook"><i class="fab fa-facebook"></i> Facebook</button>
+      <button class="share-btn" id="share-instagram"><i class="fab fa-instagram"></i> Instagram</button>
       <button class="share-btn" id="share-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
       <button class="share-btn" id="copy-link"><i class="fas fa-copy"></i> Copy Link</button>
     </div>
@@ -898,6 +898,10 @@
       document.getElementById('shareModal').style.display = 'block';
       const link = `${window.location.origin}/blog/${id}`;
       document.getElementById('share-facebook').onclick = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
+      document.getElementById('share-instagram').onclick = () => {
+        navigator.clipboard.writeText(link);
+        alert('Link copied! Open Instagram app to share.');
+      };
       document.getElementById('share-whatsapp').onclick = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(link)}`, '_blank');
       document.getElementById('copy-link').onclick = () => {
         navigator.clipboard.writeText(link);
