@@ -117,28 +117,34 @@
     .follow-btn:hover { background: #219653; transform: scale(1.04);}
     .follow-btn.unfollow:hover { background: #c0392b;}
     .follow-btn.cancel:hover { background: #c0392b;}
-    /* Popups */
-    .popup {
+    /* Popups and Modals */
+    .popup, .modal {
       display: none;
       position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
+      bottom: 0;
+      left: 50%;
+      transform: translate(-50%, 100%);
+      width: 100%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
       background: var(--card-bg);
       padding: 2.2rem 1.2rem 1.2rem;
-      border-radius: 1rem;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.28);
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      box-shadow: 0 -15px 40px rgba(0,0,0,0.28);
       z-index: 2200;
-      min-width: 320px;
-      max-width: 98vw;
-      max-height: 75vh;
-      overflow-y: auto;
-      animation: fadeIn 0.3s;
+      transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
     }
-    .popup h3 {
+    .popup.active, .modal.active {
+      display: block;
+      transform: translate(-50%, 0);
+    }
+    .popup h3, .modal h3 {
       margin-top: 0; color: var(--primary); margin-bottom: 1.2rem;
       font-size: 1.25rem; letter-spacing: .5px;
     }
-    .popup .close-btn {
+    .popup .close-btn, .modal .close-btn {
       position: absolute;
       top: 14px; right: 18px;
       background: none;
@@ -148,7 +154,7 @@
       cursor: pointer;
       transition: color 0.2s;
     }
-    .popup .close-btn:hover { color: var(--danger);}
+    .popup .close-btn:hover, .modal .close-btn:hover { color: var(--danger);}
     .popup-list-user {
       display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem 0;
       border-bottom: 1px solid var(--border);
@@ -389,24 +395,24 @@
     .modal {
       display: none;
       position: fixed;
-      top: 50%;
+      bottom: 0;
       left: 50%;
-      width: 90vw;
+      transform: translate(-50%, 100%);
+      width: 100%;
       max-width: 500px;
-      height: auto;
       max-height: 80vh;
       overflow-y: auto;
       background: #000;
       z-index: 9000;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      border-radius: 1.1rem;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+      border-top-left-radius: 1.1rem;
+      border-top-right-radius: 1.1rem;
       padding: 2.2rem 1.7rem 1.5rem;
-      transform: translate(-50%, 100%);
       transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
     }
     .modal.active {
       display: block;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, 0);
     }
     .close-btn {
       position: absolute;
@@ -533,6 +539,18 @@
         border-top: 1px solid var(--border);
       }
     }
+    @media (min-width: 601px) {
+      .popup, .modal {
+        bottom: 50%;
+        transform: translate(-50%, 50%);
+      }
+      .popup.active, .modal.active {
+        transform: translate(-50%, -50%);
+      }
+      .popup, .modal {
+        border-radius: 1rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -557,6 +575,9 @@
               </span>
               <span class="following-toggle" tabindex="0" aria-label="View Following">
                 Following: <%= profileUser.following?.length || 0 %>
+              </span>
+              <span class="posts-count" aria-label="Total Posts">
+                Posts: <%= blogs.length %>
               </span>
               <% if (user && user._id.toString() !== profileUser._id.toString()) { %>
                 <span class="common-toggle" tabindex="0" aria-label="View Common Followers">
@@ -730,12 +751,12 @@
                     <i class="fas fa-ellipsis-v"></i>
                   </button>
                   <div class="dropdown-menu" id="menu-<%= blog._id %>">
-                    <% if (blog.isOwn) { %>
+                    <button onclick="openShare('<%= blog._id %>')"><i class="fas fa-share"></i> Share blog</button>
+                    <% if (user && blog.createdBy._id.toString() === user._id.toString()) { %>
                       <form action="/blog/<%= blog._id %>?_method=DELETE" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this blog?');">
                         <button type="submit" class="delete-btn"><i class="fas fa-trash"></i> Delete blog</button>
                       </form>
                     <% } %>
-                    <button onclick="openShare('<%= blog._id %>')"><i class="fas fa-share"></i> Share blog</button>
                   </div>
                 </div>
                 <div id="likesModal-<%= blog._id %>" class="modal">
@@ -820,7 +841,7 @@
                                     <i class="fas fa-ellipsis-v"></i>
                                   </button>
                                   <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
-                                    <% if (user && reply.createdBy._id.toString() === user._id.toString()) { %>
+                                    <% if (user && (reply.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
                                       <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
                                     <% } %>
                                   </div>
@@ -836,7 +857,7 @@
                           <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
-                          <% if (user && comment.createdBy._id.toString() === user._id.toString()) { %>
+                          <% if (user && (comment.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
                             <button class="delete-btn delete-comment-btn" data-comment-id="<%= comment._id %>"><i class="fas fa-trash"></i> Delete</button>
                           <% } %>
                         </div>
@@ -865,7 +886,7 @@
       <div class="alert alert-error">Profile not found.</div>
     <% } %>
   </div>
-  <div id="shareModal">
+  <div id="shareModal" class="modal">
     <button class="close-btn" onclick="closeShare()">&times;</button>
     <h3>Share Blog</h3>
     <div class="share-options">
@@ -895,7 +916,11 @@
 
     function openShare(id) {
       currentBlogId = id;
-      document.getElementById('shareModal').style.display = 'block';
+      const shareModal = document.getElementById('shareModal');
+      shareModal.style.display = 'block';
+      setTimeout(() => {
+        shareModal.classList.add('active');
+      }, 8);
       const link = `${window.location.origin}/blog/${id}`;
       document.getElementById('share-facebook').onclick = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
       document.getElementById('share-instagram').onclick = () => {
@@ -910,7 +935,11 @@
     }
 
     function closeShare() {
-      document.getElementById('shareModal').style.display = 'none';
+      const shareModal = document.getElementById('shareModal');
+      shareModal.classList.remove('active');
+      setTimeout(() => {
+        shareModal.style.display = 'none';
+      }, 400);
     }
 
     function showLikes(id) {
@@ -970,7 +999,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Generic handler for AJAX forms
+      // Generic handler for AJAX forms (for comments, etc.)
       const handleFormSubmit = async (e, successCallback) => {
         e.preventDefault();
         const form = e.target;
@@ -1315,12 +1344,20 @@
         if (popup) {
           popup.style.display = 'block';
           overlay.style.display = 'block';
+          setTimeout(() => {
+            popup.classList.add('active');
+          }, 8);
           popup.focus();
         }
       };
       const hidePopup = (popup) => {
-        if (popup) popup.style.display = 'none';
-        overlay.style.display = 'none';
+        if (popup) {
+          popup.classList.remove('active');
+          setTimeout(() => {
+            popup.style.display = 'none';
+            overlay.style.display = 'none';
+          }, 400);
+        }
       };
 
       if (followersToggle && followersPopup) {
