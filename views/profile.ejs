@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <style>
     body { background: #1a2634; color: #ecf0f1; font-family: Arial,sans-serif; margin:0; }
-    .container { max-width: 900px; margin: 2rem auto; padding: 2rem; background: #2c3e50; border-radius: 10px; }
+    .container { max-width: 950px; margin: 2rem auto; padding: 2rem; background: #2c3e50; border-radius: 10px; }
     .profile-header { display:flex; gap:2rem; align-items:center; border-bottom:1px solid #34495e; padding-bottom:1.5rem; margin-bottom:2rem;}
     .profile-img { width:90px; height:90px; border-radius:50%; object-fit:cover; border:3px solid #f1c40f;}
     .profile-info { flex:1; }
@@ -252,7 +252,7 @@
   document.getElementById('followingBtn').onclick = () => document.getElementById('followingPopup').style.display = 'block';
   function closePopup(id) { document.getElementById(id).style.display = 'none'; }
   window.onclick = function(event) {
-    if (event.target.classList.contains('popup-bg')) event.target.style.display = 'none';
+    if (event.target.classList && event.target.classList.contains('popup-bg')) event.target.style.display = 'none';
   }
 </script>
 </body>
