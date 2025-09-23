@@ -125,7 +125,7 @@
       left: 50%;
       transform: translate(-50%, 100%);
       width: 100%;
-      max-width: 100%;
+      max-width: 500px;
       max-height: 80vh;
       overflow-y: auto;
       background: var(--card-bg);
@@ -179,7 +179,7 @@
       background: rgba(0,0,0,.48);
       z-index: 2000;
     }
-    .followers-popup, .following-popup, .blog-popup {
+    .followers-popup, .following-popup {
       left: 0;
       width: 100%;
       height: 60vh;
@@ -188,17 +188,14 @@
       transform: translate(0, 100%);
       background: #252b3f;
       border-radius: 0;
-      padding: 2.2rem 1.2rem 1.2rem;
     }
-    .followers-popup.active, .following-popup.active, .blog-popup.active {
+    .followers-popup.active, .following-popup.active {
       transform: translate(0, 0);
     }
-    .blog-popup h3 {
-      font-size: 1.25rem;
-    }
-    .blog-popup .close-btn {
-      font-size: 1.33rem;
-      top: 14px;
+    .modal {
+      width: 400px;
+      height: 50vh;
+      max-height: 500vh;
     }
     .blogs-section {
       margin-top: 2.2rem;
@@ -413,48 +410,12 @@
       color: var(--danger);
     }
     /* Modals Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translate(-50%, 100%);
-      width: 100%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      background: #000;
-      z-index: 9000;
-      box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
-      border-top-left-radius: 1.1rem;
-      border-top-right-radius: 1.1rem;
-      padding: 2.2rem 1.7rem 1.5rem;
-      transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
+    .modal .close-btn {
+      font-size: 1.33rem;
+      top: 14px;
     }
-    .modal.active {
-      display: block;
-      transform: translate(-50%, 0);
-    }
-    .close-btn {
-      position: absolute;
-      right: 18px;
-      top: 13px;
-      font-size: 2rem;
-      background: none;
-      border: none;
-      color: var(--text-main);
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-    .close-btn:hover {
-      color: var(--danger);
-    }
-    .modal h3 {
-      margin-top: 0;
-      color: var(--primary);
-      margin-bottom: 1.2rem;
-      font-size: 1.3rem;
-      letter-spacing: 1px;
+    .modal .close-btn i {
+      font-size: 1.33rem;
     }
     .comment-block, .like-block {
       display: flex;
@@ -561,22 +522,15 @@
       }
     }
     @media (min-width: 601px) {
-      .popup:not(.followers-popup):not(.following-popup):not(.common-popup), .modal:not(.blog-popup) {
+      .popup, .modal {
         bottom: 50%;
         transform: translate(-50%, 50%);
       }
-      .popup:not(.followers-popup):not(.following-popup):not(.common-popup).active, .modal:not(.blog-popup).active {
+      .popup.active, .modal.active {
         transform: translate(-50%, -50%);
       }
-      .popup:not(.followers-popup):not(.following-popup):not(.common-popup), .modal:not(.blog-popup) {
+      .popup, .modal {
         border-radius: 1rem;
-      }
-      .followers-popup, .following-popup, .blog-popup {
-        bottom: 0;
-        transform: translate(0, 100%);
-      }
-      .followers-popup.active, .following-popup.active, .blog-popup.active {
-        transform: translate(0, 0);
       }
     }
   </style>
@@ -787,28 +741,27 @@
                     <% } %>
                   </div>
                 </div>
-                <div id="likesModal-<%= blog._id %>" class="modal blog-popup">
-                  <button class="close-btn" onclick="hideLikes('<%= blog._id %>')" aria-label="Close Likes"><i class="fas fa-arrow-left"></i></button>
+                <div id="likesModal-<%= blog._id %>" class="modal">
+                  <button class="close-btn close-likes" aria-label="Close Likes">
+                    <i class="fas fa-arrow-left"></i>
+                  </button>
                   <h3><i class="fas fa-heart"></i> Likes</h3>
                   <% if (blog.likes.length === 0) { %>
                     <div style="color:#b2becd;font-size:1.06rem;">No likes yet.</div>
-                  <% } %>
-                  <% blog.likes.forEach(liker => { %>
-                    <div class="like-block">
-                      <img src="<%= liker.profileImageURL %>" alt="Profile Image">
-                      <div class="like-content">
-                        <div class="like-author">
-                          <a href="/profile/<%= liker._id %>"><%= liker.fullname %></a>
-                        </div>
+                  <% } else { %>
+                    <% blog.likes.forEach(liker => { %>
+                      <div class="popup-list-user">
+                        <img src="<%= liker.profileImageURL || '/default-profile.png' %>" alt="<%= liker.fullname %>'s Profile Image">
+                        <a href="/profile/<%= liker._id %>"><%= liker.fullname %></a>
                         <% if (user && liker._id.toString() !== user._id.toString()) { %>
                           <% if (liker.followStatus === 'requested') { %>
-                            <form action="/user/cancel-follow/<%= liker._id %>" method="POST" style="display:inline;">
+                            <form action="/user/cancel-follow/<%= liker._id %>" method="POST" style="margin:0;">
                               <button class="follow-btn cancel ajax-follow-btn" type="button" data-user-id="<%= liker._id %>" data-follow-status="requested">
                                 <i class="fas fa-user-times"></i> Cancel Request
                               </button>
                             </form>
                           <% } else { %>
-                            <form action="<%= liker.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= liker._id %>" method="POST" style="display:inline;">
+                            <form action="<%= liker.followStatus === 'following' ? `/user/unfollow/${liker._id}` : `/user/follow/${liker._id}` %>" method="POST" style="margin:0;">
                               <button class="follow-btn <%= liker.followStatus === 'following' ? 'following' : '' %> ajax-follow-btn" type="button" data-user-id="<%= liker._id %>" data-follow-status="<%= liker.followStatus %>">
                                 <i class="fas <%= liker.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
                                 <%= liker.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
@@ -817,11 +770,13 @@
                           <% } %>
                         <% } %>
                       </div>
-                    </div>
-                  <% }) %>
+                    <% }) %>
+                  <% } %>
                 </div>
-                <div id="commentsModal-<%= blog._id %>" class="modal blog-popup">
-                  <button class="close-btn" onclick="hideComments('<%= blog._id %>')" aria-label="Close Comments"><i class="fas fa-arrow-left"></i></button>
+                <div id="commentsModal-<%= blog._id %>" class="modal">
+                  <button class="close-btn close-comments" aria-label="Close Comments">
+                    <i class="fas fa-arrow-left"></i>
+                  </button>
                   <h3><i class="fas fa-comments"></i> Comments</h3>
                   <div class="comments-list">
                   <% if (blog.comments.length === 0) { %>
@@ -977,21 +932,21 @@
       }
       let modal = document.getElementById('likesModal-' + id);
       modal.style.display = 'block';
-      const overlay = document.querySelector('.popup-overlay');
-      overlay.style.display = 'block';
       setTimeout(() => {
         modal.classList.add('active');
       }, 8);
+      const overlay = document.querySelector('.popup-overlay');
+      overlay.style.display = 'block';
     }
 
     function hideLikes(id) {
       let modal = document.getElementById('likesModal-' + id);
       modal.classList.remove('active');
-      const overlay = document.querySelector('.popup-overlay');
-      overlay.style.display = 'none';
       setTimeout(() => {
         modal.style.display = 'none';
       }, 400);
+      const overlay = document.querySelector('.popup-overlay');
+      overlay.style.display = 'none';
     }
     
     function showComments(id) {
@@ -1001,21 +956,21 @@
       }
       let modal = document.getElementById('commentsModal-' + id);
       modal.style.display = 'block';
-      const overlay = document.querySelector('.popup-overlay');
-      overlay.style.display = 'block';
       setTimeout(() => {
         modal.classList.add('active');
       }, 8);
+      const overlay = document.querySelector('.popup-overlay');
+      overlay.style.display = 'block';
     }
 
     function hideComments(id) {
       let modal = document.getElementById('commentsModal-' + id);
       modal.classList.remove('active');
-      const overlay = document.querySelector('.popup-overlay');
-      overlay.style.display = 'none';
       setTimeout(() => {
         modal.style.display = 'none';
       }, 400);
+      const overlay = document.querySelector('.popup-overlay');
+      overlay.style.display = 'none';
     }
 
     document.addEventListener('click', (e) => {
@@ -1031,10 +986,6 @@
       if (e.key === 'Escape') {
         document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('active'));
         closeShare();
-        document.querySelectorAll('.modal.active').forEach(modal => {
-          modal.classList.remove('active');
-          setTimeout(() => { modal.style.display = 'none'; }, 400);
-        });
       }
     });
 
@@ -1463,6 +1414,7 @@
               modal.style.display = 'none';
             }, 400);
           });
+          overlay.style.display = 'none';
         }
       });
     });
