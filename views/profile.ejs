@@ -197,6 +197,9 @@
       background: rgba(0,0,0,.48);
       z-index: 2000;
     }
+    .overlay-transparent {
+      background: transparent !important;
+    }
     .followers-popup, .following-popup {
       left: 0;
       width: 100%;
@@ -962,6 +965,7 @@
         modal.classList.add('active');
       }, 8);
       const overlay = document.querySelector('.popup-overlay');
+      overlay.classList.add('overlay-transparent');
       overlay.style.display = 'block';
     }
 
@@ -972,6 +976,7 @@
         modal.style.display = 'none';
       }, 400);
       const overlay = document.querySelector('.popup-overlay');
+      overlay.classList.remove('overlay-transparent');
       overlay.style.display = 'none';
     }
     
@@ -986,6 +991,7 @@
         modal.classList.add('active');
       }, 8);
       const overlay = document.querySelector('.popup-overlay');
+      overlay.classList.add('overlay-transparent');
       overlay.style.display = 'block';
     }
 
@@ -996,6 +1002,7 @@
         modal.style.display = 'none';
       }, 400);
       const overlay = document.querySelector('.popup-overlay');
+      overlay.classList.remove('overlay-transparent');
       overlay.style.display = 'none';
     }
 
