@@ -211,6 +211,11 @@
     .followers-popup.active, .following-popup.active {
       transform: translate(0, 0);
     }
+    .likes-modal, .comments-modal {
+      max-width: 380px;
+      height: 500px;
+      background: #252b3f;
+    }
     .blogs-section {
       margin-top: 2.2rem;
     }
@@ -762,7 +767,7 @@
                     <% } %>
                   </div>
                 </div>
-                <div id="likesModal-<%= blog._id %>" class="modal">
+                <div id="likesModal-<%= blog._id %>" class="modal likes-modal">
                   <button class="close-btn close-likes" aria-label="Close Likes">
                     <i class="fas fa-arrow-left"></i>
                   </button>
@@ -794,7 +799,7 @@
                     <% }) %>
                   <% } %>
                 </div>
-                <div id="commentsModal-<%= blog._id %>" class="modal">
+                <div id="commentsModal-<%= blog._id %>" class="modal comments-modal">
                   <button class="close-btn close-comments" aria-label="Close Comments">
                     <i class="fas fa-arrow-left"></i>
                   </button>
