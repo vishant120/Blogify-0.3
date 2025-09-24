@@ -125,8 +125,9 @@
       left: 50%;
       transform: translate(-50%, 100%);
       width: 100%;
-      max-width: 500px;
-      max-height: 80vh;
+      max-width: 350px;
+      height: auto;
+      max-height: 500vh;
       overflow-y: auto;
       background: var(--card-bg);
       padding: 2.2rem 1.2rem 1.2rem;
@@ -209,11 +210,6 @@
     }
     .followers-popup.active, .following-popup.active {
       transform: translate(0, 0);
-    }
-    .modal {
-      width: 400px;
-      height: 50vh;
-      max-height: 500vh;
     }
     .blogs-section {
       margin-top: 2.2rem;
@@ -541,11 +537,11 @@
     }
     @media (min-width: 601px) {
       .popup:not(.followers-popup):not(.following-popup), .modal {
-        bottom: 50%;
-        transform: translate(-50%, 50%);
+        bottom: 0;
+        transform: translate(-50%, 100%);
       }
       .popup:not(.followers-popup):not(.following-popup).active, .modal.active {
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, 0);
       }
       .popup:not(.followers-popup):not(.following-popup), .modal {
         border-radius: 1rem;
