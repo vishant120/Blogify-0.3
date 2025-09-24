@@ -993,6 +993,10 @@
       const overlay = document.querySelector('.popup-overlay');
       overlay.classList.add('overlay-transparent');
       overlay.style.display = 'block';
+      const textarea = modal.querySelector('.post-comment-form textarea');
+      if (textarea) {
+        textarea.focus();
+      }
     }
 
     function hideComments(id) {
@@ -1023,6 +1027,23 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Add event listeners for close buttons in modals
+      document.querySelectorAll('.close-likes').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const modal = e.target.closest('.modal');
+          const id = modal.id.split('-')[1];
+          hideLikes(id);
+        });
+      });
+
+      document.querySelectorAll('.close-comments').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const modal = e.target.closest('.modal');
+          const id = modal.id.split('-')[1];
+          hideComments(id);
+        });
+      });
+
       // Generic handler for AJAX forms (for comments, etc.)
       const handleFormSubmit = async (e, successCallback) => {
         e.preventDefault();
