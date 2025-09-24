@@ -114,9 +114,9 @@
       background: #bdc3c7;
       cursor: not-allowed;
     }
-    .follow-btn:hover { background: #219653; transform: scale(1.04);}
-    .follow-btn.unfollow:hover { background: #c0392b;}
-    .follow-btn.cancel:hover { background: #c0392b;}
+    .follow-btn:hover { background: #219653; transform: scale(1.04); }
+    .follow-btn.unfollow:hover { background: #c0392b; }
+    .follow-btn.cancel:hover { background: #c0392b; }
     /* Popups and Modals */
     .popup, .modal {
       display: none;
@@ -136,20 +136,21 @@
       z-index: 2200;
       transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
     }
-    .followers-popup, .following-popup {
-      max-height: 1200vh;
-    }
     .popup.active, .modal.active {
       display: block;
       transform: translate(-50%, 0);
     }
     .popup h3, .modal h3 {
-      margin-top: 0; color: var(--primary); margin-bottom: 1.2rem;
-      font-size: 1.25rem; letter-spacing: .5px;
+      margin-top: 0;
+      color: var(--primary);
+      margin-bottom: 1.2rem;
+      font-size: 1.25rem;
+      letter-spacing: .5px;
     }
     .popup .close-btn, .modal .close-btn {
       position: absolute;
-      top: 14px; right: 18px;
+      top: 14px;
+      right: 18px;
       background: none;
       border: none;
       color: var(--text-main);
@@ -157,15 +158,26 @@
       cursor: pointer;
       transition: color 0.2s;
     }
-    .popup .close-btn:hover, .modal .close-btn:hover { color: var(--danger);}
+    .popup .close-btn:hover, .modal .close-btn:hover {
+      color: var(--danger);
+    }
     .popup-list-user {
-      display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding: 0.5rem 0;
       border-bottom: 1px solid var(--border);
     }
-    .popup-list-user:last-child { border-bottom: none;}
+    .popup-list-user:last-child {
+      border-bottom: none;
+    }
     .popup-list-user img {
-      width: 40px; height: 40px; border-radius: 50%;
-      object-fit: cover; background: #181c20;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #181c20;
     }
     .popup-list-user a {
       color: var(--primary);
@@ -174,13 +186,34 @@
       font-weight: 500;
       transition: text-decoration 0.15s;
     }
-    .popup-list-user a:hover { text-decoration: underline;}
+    .popup-list-user a:hover {
+      text-decoration: underline;
+    }
     .popup-overlay {
       display: none;
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,.48);
       z-index: 2000;
+    }
+    .followers-popup, .following-popup {
+      left: 0;
+      width: 100%;
+      max-width: 100%;
+      height: 80vh;
+      max-height: 80vh;
+      transform: translate(0, 100%);
+      background: #252b3f;
+      border-radius: 0;
+      padding: 2.2rem 1.2rem 1.2rem;
+    }
+    .followers-popup.active, .following-popup.active {
+      transform: translate(0, 0);
+    }
+    .modal {
+      width: 400px;
+      height: 50vh;
+      max-height: 500vh;
     }
     .blogs-section {
       margin-top: 2.2rem;
@@ -395,48 +428,12 @@
       color: var(--danger);
     }
     /* Modals Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translate(-50%, 100%);
-      width: 100%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      background: #000;
-      z-index: 9000;
-      box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
-      border-top-left-radius: 1.1rem;
-      border-top-right-radius: 1.1rem;
-      padding: 2.2rem 1.7rem 1.5rem;
-      transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
+    .modal .close-btn {
+      font-size: 1.33rem;
+      top: 14px;
     }
-    .modal.active {
-      display: block;
-      transform: translate(-50%, 0);
-    }
-    .close-btn {
-      position: absolute;
-      right: 18px;
-      top: 13px;
-      font-size: 2rem;
-      background: none;
-      border: none;
-      color: var(--text-main);
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-    .close-btn:hover {
-      color: var(--danger);
-    }
-    .modal h3 {
-      margin-top: 0;
-      color: var(--primary);
-      margin-bottom: 1.2rem;
-      font-size: 1.3rem;
-      letter-spacing: 1px;
+    .modal .close-btn i {
+      font-size: 1.33rem;
     }
     .comment-block, .like-block {
       display: flex;
@@ -521,17 +518,17 @@
     @media (max-width: 900px) {
       .container { padding: 1.2rem 0.4rem; }
       .profile-header { gap: 1rem; }
-      .blog-card { flex-direction: column; gap: 0.7rem; min-height: unset;}
-      .blog-cover { width: 100%; height: 145px; margin: 0 0 1rem 0;}
+      .blog-card { flex-direction: column; gap: 0.7rem; min-height: unset; }
+      .blog-cover { width: 100%; height: 145px; margin: 0 0 1rem 0; }
     }
     @media (max-width: 600px) {
-      .container { padding: 0.4rem 0.1rem;}
-      .profile-header { flex-direction: column; align-items: flex-start; gap: 1.2rem;}
-      .profile-avatar { width: 80px; height: 80px;}
-      .blogs-section { margin-top: 1.2rem;}
-      .blog-card { flex-direction: column; gap: 0.5rem;}
-      .blog-cover { min-width: 100%; max-width: 100%; height: 140px;}
-      .blog-menu { right: 10px; top: 10px;}
+      .container { padding: 0.4rem 0.1rem; }
+      .profile-header { flex-direction: column; align-items: flex-start; gap: 1.2rem; }
+      .profile-avatar { width: 80px; height: 80px; }
+      .blogs-section { margin-top: 1.2rem; }
+      .blog-card { flex-direction: column; gap: 0.5rem; }
+      .blog-cover { min-width: 100%; max-width: 100%; height: 140px; }
+      .blog-menu { right: 10px; top: 10px; }
       .post-comment-form {
         position: sticky;
         bottom: 0;
@@ -543,15 +540,22 @@
       }
     }
     @media (min-width: 601px) {
-      .popup, .modal {
+      .popup:not(.followers-popup):not(.following-popup), .modal {
         bottom: 50%;
         transform: translate(-50%, 50%);
       }
-      .popup.active, .modal.active {
+      .popup:not(.followers-popup):not(.following-popup).active, .modal.active {
         transform: translate(-50%, -50%);
       }
-      .popup, .modal {
+      .popup:not(.followers-popup):not(.following-popup), .modal {
         border-radius: 1rem;
+      }
+      .followers-popup, .following-popup {
+        bottom: 0;
+        transform: translate(0, 100%);
+      }
+      .followers-popup.active, .following-popup.active {
+        transform: translate(0, 0);
       }
     }
   </style>
@@ -763,27 +767,26 @@
                   </div>
                 </div>
                 <div id="likesModal-<%= blog._id %>" class="modal">
-                  <button class="close-btn" onclick="hideLikes('<%= blog._id %>')">&times;</button>
+                  <button class="close-btn close-likes" aria-label="Close Likes">
+                    <i class="fas fa-arrow-left"></i>
+                  </button>
                   <h3><i class="fas fa-heart"></i> Likes</h3>
                   <% if (blog.likes.length === 0) { %>
                     <div style="color:#b2becd;font-size:1.06rem;">No likes yet.</div>
-                  <% } %>
-                  <% blog.likes.forEach(liker => { %>
-                    <div class="like-block">
-                      <img src="<%= liker.profileImageURL %>" alt="Profile Image">
-                      <div class="like-content">
-                        <div class="like-author">
-                          <a href="/profile/<%= liker._id %>"><%= liker.fullname %></a>
-                        </div>
+                  <% } else { %>
+                    <% blog.likes.forEach(liker => { %>
+                      <div class="popup-list-user">
+                        <img src="<%= liker.profileImageURL || '/default-profile.png' %>" alt="<%= liker.fullname %>'s Profile Image">
+                        <a href="/profile/<%= liker._id %>"><%= liker.fullname %></a>
                         <% if (user && liker._id.toString() !== user._id.toString()) { %>
                           <% if (liker.followStatus === 'requested') { %>
-                            <form action="/user/cancel-follow/<%= liker._id %>" method="POST" style="display:inline;">
+                            <form action="/user/cancel-follow/<%= liker._id %>" method="POST" style="margin:0;">
                               <button class="follow-btn cancel ajax-follow-btn" type="button" data-user-id="<%= liker._id %>" data-follow-status="requested">
                                 <i class="fas fa-user-times"></i> Cancel Request
                               </button>
                             </form>
                           <% } else { %>
-                            <form action="<%= liker.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= liker._id %>" method="POST" style="display:inline;">
+                            <form action="<%= liker.followStatus === 'following' ? `/user/unfollow/${liker._id}` : `/user/follow/${liker._id}` %>" method="POST" style="margin:0;">
                               <button class="follow-btn <%= liker.followStatus === 'following' ? 'following' : '' %> ajax-follow-btn" type="button" data-user-id="<%= liker._id %>" data-follow-status="<%= liker.followStatus %>">
                                 <i class="fas <%= liker.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
                                 <%= liker.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
@@ -792,81 +795,83 @@
                           <% } %>
                         <% } %>
                       </div>
-                    </div>
-                  <% }) %>
+                    <% }) %>
+                  <% } %>
                 </div>
                 <div id="commentsModal-<%= blog._id %>" class="modal">
-                  <button class="close-btn" onclick="hideComments('<%= blog._id %>')">&times;</button>
+                  <button class="close-btn close-comments" aria-label="Close Comments">
+                    <i class="fas fa-arrow-left"></i>
+                  </button>
                   <h3><i class="fas fa-comments"></i> Comments</h3>
                   <div class="comments-list">
-                  <% if (blog.comments.length === 0) { %>
-                    <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
-                  <% } %>
-                  <% blog.comments.forEach(comment => { %>
-                    <div class="comment-block" data-comment-id="<%= comment._id %>">
-                      <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
-                      <div class="comment-content">
-                        <div class="comment-author"><a href="/profile/<%= comment.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= comment.createdBy.fullname %></a></div>
-                        <div class="comment-text"><%= comment.content %></div>
-                        <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
-                        <div class="comment-actions">
-                          <% if (user) { %>
-                            <button class="comment-action-btn like-comment-btn <%= comment.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= comment._id %>">
-                              <i class="fas fa-heart"></i>
-                              <span class="like-count"><%= comment.likes.length %></span>
-                            </button>
-                            <button class="comment-action-btn reply-btn" data-comment-id="<%= comment._id %>">
-                              <i class="fas fa-reply"></i> Reply
-                            </button>
-                          <% } %>
-                          <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
-                        </div>
-                        <div class="comment-replies">
-                          <% if (comment.replies && comment.replies.length > 0) { %>
-                            <% comment.replies.forEach(reply => { %>
-                              <div class="comment-block" data-comment-id="<%= reply._id %>">
-                                <img src="<%= reply.createdBy.profileImageURL %>" alt="Profile Image">
-                                <div class="comment-content">
-                                  <div class="comment-author"><a href="/profile/<%= reply.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= reply.createdBy.fullname %></a></div>
-                                  <div class="comment-text"><%= reply.content %></div>
-                                  <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(reply.createdAt).fromNow() %></div>
-                                  <div class="comment-actions">
-                                    <% if (user) { %>
-                                      <button class="comment-action-btn like-comment-btn <%= reply.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= reply._id %>">
-                                        <i class="fas fa-heart"></i>
-                                        <span class="like-count"><%= reply.likes.length %></span>
-                                      </button>
-                                    <% } %>
+                    <% if (blog.comments.length === 0) { %>
+                      <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
+                    <% } %>
+                    <% blog.comments.forEach(comment => { %>
+                      <div class="comment-block" data-comment-id="<%= comment._id %>">
+                        <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
+                        <div class="comment-content">
+                          <div class="comment-author"><a href="/profile/<%= comment.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= comment.createdBy.fullname %></a></div>
+                          <div class="comment-text"><%= comment.content %></div>
+                          <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
+                          <div class="comment-actions">
+                            <% if (user) { %>
+                              <button class="comment-action-btn like-comment-btn <%= comment.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= comment._id %>">
+                                <i class="fas fa-heart"></i>
+                                <span class="like-count"><%= comment.likes.length %></span>
+                              </button>
+                              <button class="comment-action-btn reply-btn" data-comment-id="<%= comment._id %>">
+                                <i class="fas fa-reply"></i> Reply
+                              </button>
+                            <% } %>
+                            <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
+                          </div>
+                          <div class="comment-replies">
+                            <% if (comment.replies && comment.replies.length > 0) { %>
+                              <% comment.replies.forEach(reply => { %>
+                                <div class="comment-block" data-comment-id="<%= reply._id %>">
+                                  <img src="<%= reply.createdBy.profileImageURL %>" alt="Profile Image">
+                                  <div class="comment-content">
+                                    <div class="comment-author"><a href="/profile/<%= reply.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= reply.createdBy.fullname %></a></div>
+                                    <div class="comment-text"><%= reply.content %></div>
+                                    <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(reply.createdAt).fromNow() %></div>
+                                    <div class="comment-actions">
+                                      <% if (user) { %>
+                                        <button class="comment-action-btn like-comment-btn <%= reply.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= reply._id %>">
+                                          <i class="fas fa-heart"></i>
+                                          <span class="like-count"><%= reply.likes.length %></span>
+                                        </button>
+                                      <% } %>
+                                    </div>
+                                  </div>
+                                  <div class="comment-menu">
+                                    <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')">
+                                      <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
+                                      <% if (user && (reply.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
+                                        <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
+                                      <% } %>
+                                    </div>
                                   </div>
                                 </div>
-                                <div class="comment-menu">
-                                  <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                  </button>
-                                  <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
-                                    <% if (user && (reply.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
-                                      <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
-                                    <% } %>
-                                  </div>
-                                </div>
-                              </div>
-                            <% }) %>
-                          <% } %>
+                              <% }) %>
+                            <% } %>
+                          </div>
+                          <div class="reply-form-container"></div>
                         </div>
-                        <div class="reply-form-container"></div>
-                      </div>
-                      <div class="comment-menu">
-                        <button class="dots-btn" onclick="toggleCommentMenu('<%= comment._id %>')">
-                          <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
-                          <% if (user && (comment.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
-                            <button class="delete-btn delete-comment-btn" data-comment-id="<%= comment._id %>"><i class="fas fa-trash"></i> Delete</button>
-                          <% } %>
+                        <div class="comment-menu">
+                          <button class="dots-btn" onclick="toggleCommentMenu('<%= comment._id %>')">
+                            <i class="fas fa-ellipsis-v"></i>
+                          </button>
+                          <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
+                            <% if (user && (comment.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
+                              <button class="delete-btn delete-comment-btn" data-comment-id="<%= comment._id %>"><i class="fas fa-trash"></i> Delete</button>
+                            <% } %>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  <% }) %>
+                    <% }) %>
                   </div>
                   <% if (user) { %>
                     <form action="/comment/<%= blog._id %>" method="POST" class="post-comment-form">
@@ -955,6 +960,8 @@
       setTimeout(() => {
         modal.classList.add('active');
       }, 8);
+      const overlay = document.querySelector('.popup-overlay');
+      overlay.style.display = 'block';
     }
 
     function hideLikes(id) {
@@ -963,6 +970,8 @@
       setTimeout(() => {
         modal.style.display = 'none';
       }, 400);
+      const overlay = document.querySelector('.popup-overlay');
+      overlay.style.display = 'none';
     }
     
     function showComments(id) {
@@ -975,6 +984,8 @@
       setTimeout(() => {
         modal.classList.add('active');
       }, 8);
+      const overlay = document.querySelector('.popup-overlay');
+      overlay.style.display = 'block';
     }
 
     function hideComments(id) {
@@ -983,6 +994,8 @@
       setTimeout(() => {
         modal.style.display = 'none';
       }, 400);
+      const overlay = document.querySelector('.popup-overlay');
+      overlay.style.display = 'none';
     }
 
     document.addEventListener('click', (e) => {
@@ -1406,6 +1419,13 @@
         hidePopup(followersPopup);
         hidePopup(followingPopup);
         hidePopup(commonPopup);
+        document.querySelectorAll('.modal.active').forEach(modal => {
+          modal.classList.remove('active');
+          setTimeout(() => {
+            modal.style.display = 'none';
+          }, 400);
+        });
+        overlay.style.display = 'none';
       });
 
       window.addEventListener('keydown', (e) => {
@@ -1413,6 +1433,13 @@
           hidePopup(followersPopup);
           hidePopup(followingPopup);
           hidePopup(commonPopup);
+          document.querySelectorAll('.modal.active').forEach(modal => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+              modal.style.display = 'none';
+            }, 400);
+          });
+          overlay.style.display = 'none';
         }
       });
     });
