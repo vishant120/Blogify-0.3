@@ -519,6 +519,21 @@
       padding-left: 2rem;
       border-left: 2px solid var(--border);
     }
+    .comments-modal {
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 0;
+    }
+    .comments-container {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding-bottom: 1.2rem;
+    }
+    .post-comment-form {
+      border-top: 1px solid var(--border);
+      padding: 1rem 1.2rem;
+      background: var(--card-bg);
+    }
     @media (max-width: 900px) {
       .container { padding: 1.2rem 0.4rem; }
       .profile-header { gap: 1rem; }
@@ -807,75 +822,77 @@
                     <i class="fas fa-arrow-left"></i>
                   </button>
                   <h3><i class="fas fa-comments"></i> Comments</h3>
-                  <div class="comments-list">
-                    <% if (blog.comments.length === 0) { %>
-                      <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
-                    <% } %>
-                    <% blog.comments.forEach(comment => { %>
-                      <div class="comment-block" data-comment-id="<%= comment._id %>">
-                        <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
-                        <div class="comment-content">
-                          <div class="comment-author"><a href="/profile/<%= comment.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= comment.createdBy.fullname %></a></div>
-                          <div class="comment-text"><%= comment.content %></div>
-                          <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
-                          <div class="comment-actions">
-                            <% if (user) { %>
-                              <button class="comment-action-btn like-comment-btn <%= comment.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= comment._id %>">
-                                <i class="fas fa-heart"></i>
-                                <span class="like-count"><%= comment.likes.length %></span>
-                              </button>
-                              <button class="comment-action-btn reply-btn" data-comment-id="<%= comment._id %>">
-                                <i class="fas fa-reply"></i> Reply
-                              </button>
-                            <% } %>
-                            <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
-                          </div>
-                          <div class="comment-replies">
-                            <% if (comment.replies && comment.replies.length > 0) { %>
-                              <% comment.replies.forEach(reply => { %>
-                                <div class="comment-block" data-comment-id="<%= reply._id %>">
-                                  <img src="<%= reply.createdBy.profileImageURL %>" alt="Profile Image">
-                                  <div class="comment-content">
-                                    <div class="comment-author"><a href="/profile/<%= reply.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= reply.createdBy.fullname %></a></div>
-                                    <div class="comment-text"><%= reply.content %></div>
-                                    <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(reply.createdAt).fromNow() %></div>
-                                    <div class="comment-actions">
-                                      <% if (user) { %>
-                                        <button class="comment-action-btn like-comment-btn <%= reply.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= reply._id %>">
-                                          <i class="fas fa-heart"></i>
-                                          <span class="like-count"><%= reply.likes.length %></span>
-                                        </button>
-                                      <% } %>
+                  <div class="comments-container">
+                    <div class="comments-list">
+                      <% if (blog.comments.length === 0) { %>
+                        <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
+                      <% } %>
+                      <% blog.comments.forEach(comment => { %>
+                        <div class="comment-block" data-comment-id="<%= comment._id %>">
+                          <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
+                          <div class="comment-content">
+                            <div class="comment-author"><a href="/profile/<%= comment.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= comment.createdBy.fullname %></a></div>
+                            <div class="comment-text"><%= comment.content %></div>
+                            <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
+                            <div class="comment-actions">
+                              <% if (user) { %>
+                                <button class="comment-action-btn like-comment-btn <%= comment.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= comment._id %>">
+                                  <i class="fas fa-heart"></i>
+                                  <span class="like-count"><%= comment.likes.length %></span>
+                                </button>
+                                <button class="comment-action-btn reply-btn" data-comment-id="<%= comment._id %>">
+                                  <i class="fas fa-reply"></i> Reply
+                                </button>
+                              <% } %>
+                              <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
+                            </div>
+                            <div class="comment-replies">
+                              <% if (comment.replies && comment.replies.length > 0) { %>
+                                <% comment.replies.forEach(reply => { %>
+                                  <div class="comment-block" data-comment-id="<%= reply._id %>">
+                                    <img src="<%= reply.createdBy.profileImageURL %>" alt="Profile Image">
+                                    <div class="comment-content">
+                                      <div class="comment-author"><a href="/profile/<%= reply.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= reply.createdBy.fullname %></a></div>
+                                      <div class="comment-text"><%= reply.content %></div>
+                                      <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(reply.createdAt).fromNow() %></div>
+                                      <div class="comment-actions">
+                                        <% if (user) { %>
+                                          <button class="comment-action-btn like-comment-btn <%= reply.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= reply._id %>">
+                                            <i class="fas fa-heart"></i>
+                                            <span class="like-count"><%= reply.likes.length %></span>
+                                          </button>
+                                        <% } %>
+                                      </div>
+                                    </div>
+                                    <div class="comment-menu">
+                                      <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                      </button>
+                                      <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
+                                        <% if (user && (reply.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
+                                          <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
+                                        <% } %>
+                                      </div>
                                     </div>
                                   </div>
-                                  <div class="comment-menu">
-                                    <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')">
-                                      <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
-                                      <% if (user && (reply.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
-                                        <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
-                                      <% } %>
-                                    </div>
-                                  </div>
-                                </div>
-                              <% }) %>
-                            <% } %>
+                                <% }) %>
+                              <% } %>
+                            </div>
+                            <div class="reply-form-container"></div>
                           </div>
-                          <div class="reply-form-container"></div>
-                        </div>
-                        <div class="comment-menu">
-                          <button class="dots-btn" onclick="toggleCommentMenu('<%= comment._id %>')">
-                            <i class="fas fa-ellipsis-v"></i>
-                          </button>
-                          <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
-                            <% if (user && (comment.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
-                              <button class="delete-btn delete-comment-btn" data-comment-id="<%= comment._id %>"><i class="fas fa-trash"></i> Delete</button>
-                            <% } %>
+                          <div class="comment-menu">
+                            <button class="dots-btn" onclick="toggleCommentMenu('<%= comment._id %>')">
+                              <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
+                              <% if (user && (comment.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
+                                <button class="delete-btn delete-comment-btn" data-comment-id="<%= comment._id %>"><i class="fas fa-trash"></i> Delete</button>
+                              <% } %>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    <% }) %>
+                      <% }) %>
+                    </div>
                   </div>
                   <% if (user) { %>
                     <form action="/comment/<%= blog._id %>" method="POST" class="post-comment-form">
