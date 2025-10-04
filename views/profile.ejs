@@ -158,37 +158,38 @@
       position: fixed;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
       width: 90vw;
       max-width: 500px;
       height: auto;
       max-height: 80vh;
       overflow-y: auto;
       background: var(--card-bg);
-      padding: 2.2rem 1.2rem 1.2rem;
+      padding: 2.2rem 1.7rem 1.5rem;
       border-radius: 1.1rem;
       box-shadow: 0 8px 32px rgba(0,0,0,0.25);
       z-index: 9000;
+      transform: translate(-50%, 100%);
       transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
     }
     .popup.active, .modal.active {
       display: block;
+      transform: translate(-50%, -50%);
     }
     .popup h3, .modal h3 {
       margin-top: 0;
       color: var(--primary);
       margin-bottom: 1.2rem;
-      font-size: 1.25rem;
-      letter-spacing: .5px;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
     }
     .popup .close-btn, .modal .close-btn {
       position: absolute;
-      top: 14px;
       right: 18px;
+      top: 13px;
+      font-size: 2rem;
       background: none;
       border: none;
       color: var(--text-main);
-      font-size: 2rem;
       cursor: pointer;
       transition: color 0.2s;
     }
@@ -233,24 +234,11 @@
     .overlay-transparent {
       background: transparent !important;
     }
-    .followers-popup, .following-popup {
-      left: 0;
-      width: 100%;
-      max-width: 100%;
-      height: 80vh;
-      max-height: 80vh;
-      transform: translate(0, 100%);
-      background: #252b3f;
-      border-radius: 0;
-      padding: 2.2rem 1.2rem 1.2rem;
-    }
-    .followers-popup.active, .following-popup.active {
-      transform: translate(0, 0);
+    .followers-popup, .following-popup, .common-popup {
+      max-width: 500px;
     }
     .likes-modal, .comments-modal {
-      max-width: 800px;
-      height: 500px;
-      background: #252b3f;
+      max-width: 500px;
     }
     .blogs-section {
       margin-top: 2.2rem;
@@ -590,24 +578,9 @@
         padding: 1rem;
         border-top: 1px solid var(--border);
       }
-    }
-    @media (min-width: 601px) {
-      .popup:not(.followers-popup):not(.following-popup), .modal {
-        bottom: 0;
-        transform: translate(-50%, 100%);
-      }
-      .popup:not(.followers-popup):not(.following-popup).active, .modal.active {
-        transform: translate(-50%, 0);
-      }
-      .popup:not(.followers-popup):not(.following-popup), .modal {
-        border-radius: 1rem;
-      }
-      .followers-popup, .following-popup {
-        bottom: 0;
-        transform: translate(0, 100%);
-      }
-      .followers-popup.active, .following-popup.active {
-        transform: translate(0, 0);
+      .modal {
+        width: 95vw;
+        padding: 1.5rem 1rem 1rem;
       }
     }
   </style>
@@ -675,9 +648,7 @@
       <!-- Followers Popup -->
       <div class="popup followers-popup">
         <h3><i class="fas fa-users"></i> Followers</h3>
-        <button class="close-btn close-followers" aria-label="Close Followers">
-          <i class="fas fa-arrow-left"></i>
-        </button>
+        <button class="close-btn" onclick="hidePopup(document.querySelector('.followers-popup'))">&times;</button>
         <% if (!profileUser.followers || profileUser.followers.length === 0) { %>
           <p style="color:var(--text-dim);">No followers yet.</p>
         <% } else { %>
@@ -692,9 +663,7 @@
       <!-- Following Popup -->
       <div class="popup following-popup">
         <h3><i class="fas fa-user-friends"></i> Following</h3>
-        <button class="close-btn close-following" aria-label="Close Following">
-          <i class="fas fa-arrow-left"></i>
-        </button>
+        <button class="close-btn" onclick="hidePopup(document.querySelector('.following-popup'))">&times;</button>
         <% if (!profileUser.following || profileUser.following.length === 0) { %>
           <p style="color:var(--text-dim);">Not following anyone yet.</p>
         <% } else { %>
@@ -709,9 +678,7 @@
       <!-- Common Followers Popup -->
       <div class="popup common-popup">
         <h3><i class="fas fa-user-group"></i> Common Followers</h3>
-        <button class="close-btn close-common" aria-label="Close Common Followers">
-          <i class="fas fa-arrow-left"></i>
-        </button>
+        <button class="close-btn" onclick="hidePopup(document.querySelector('.common-popup'))">&times;</button>
         <% if (commonFollowers.length === 0) { %>
           <p style="color:var(--text-dim);">No common followers.</p>
         <% } else { %>
@@ -825,7 +792,7 @@
                     <% } %>
                   </div>
                 </div>
-                <div id="likesModal-<%= blog._id %>" class="modal likes-modal">
+                <div id="likesModal-<%= blog._id %>" class="modal">
                   <button class="close-btn" onclick="hideLikes('<%= blog._id %>')">&times;</button>
                   <h3><i class="fas fa-heart"></i> Likes</h3>
                   <% if (blog.likes.length === 0) { %>
@@ -858,80 +825,78 @@
                     </div>
                   <% }) %>
                 </div>
-                <div id="commentsModal-<%= blog._id %>" class="modal comments-modal">
+                <div id="commentsModal-<%= blog._id %>" class="modal">
                   <button class="close-btn" onclick="hideComments('<%= blog._id %>')">&times;</button>
                   <h3><i class="fas fa-comments"></i> Comments</h3>
-                  <div class="comments-container">
-                    <div class="comments-list">
-                      <% if (blog.comments.length === 0) { %>
-                        <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
-                      <% } %>
-                      <% blog.comments.forEach(comment => { %>
-                        <div class="comment-block" data-comment-id="<%= comment._id %>">
-                          <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
-                          <div class="comment-content">
-                            <div class="comment-author"><a href="/profile/<%= comment.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= comment.createdBy.fullname %></a></div>
-                            <div class="comment-text"><%= comment.content %></div>
-                            <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
-                            <div class="comment-actions">
-                              <% if (user) { %>
-                                <button class="comment-action-btn like-comment-btn <%= comment.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= comment._id %>">
-                                  <i class="fas fa-heart"></i>
-                                  <span class="like-count"><%= comment.likes.length %></span>
-                                </button>
-                                <button class="comment-action-btn reply-btn" data-comment-id="<%= comment._id %>">
-                                  <i class="fas fa-reply"></i> Reply
-                                </button>
-                              <% } %>
-                              <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
-                            </div>
-                            <div class="comment-replies">
-                              <% if (comment.replies && comment.replies.length > 0) { %>
-                                <% comment.replies.forEach(reply => { %>
-                                  <div class="comment-block" data-comment-id="<%= reply._id %>">
-                                    <img src="<%= reply.createdBy.profileImageURL %>" alt="Profile Image">
-                                    <div class="comment-content">
-                                      <div class="comment-author"><a href="/profile/<%= reply.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= reply.createdBy.fullname %></a></div>
-                                      <div class="comment-text"><%= reply.content %></div>
-                                      <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(reply.createdAt).fromNow() %></div>
-                                      <div class="comment-actions">
-                                        <% if (user) { %>
-                                          <button class="comment-action-btn like-comment-btn <%= reply.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= reply._id %>">
-                                            <i class="fas fa-heart"></i>
-                                            <span class="like-count"><%= reply.likes.length %></span>
-                                          </button>
-                                        <% } %>
-                                      </div>
-                                    </div>
-                                    <div class="comment-menu">
-                                      <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                      </button>
-                                      <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
-                                        <% if (user && (reply.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
-                                          <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
-                                        <% } %>
-                                      </div>
+                  <div class="comments-list">
+                    <% if (blog.comments.length === 0) { %>
+                      <div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>
+                    <% } %>
+                    <% blog.comments.forEach(comment => { %>
+                      <div class="comment-block" data-comment-id="<%= comment._id %>">
+                        <img src="<%= comment.createdBy.profileImageURL %>" alt="Profile Image">
+                        <div class="comment-content">
+                          <div class="comment-author"><a href="/profile/<%= comment.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= comment.createdBy.fullname %></a></div>
+                          <div class="comment-text"><%= comment.content %></div>
+                          <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(comment.createdAt).fromNow() %></div>
+                          <div class="comment-actions">
+                            <% if (user) { %>
+                              <button class="comment-action-btn like-comment-btn <%= comment.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= comment._id %>">
+                                <i class="fas fa-heart"></i>
+                                <span class="like-count"><%= comment.likes.length %></span>
+                              </button>
+                              <button class="comment-action-btn reply-btn" data-comment-id="<%= comment._id %>">
+                                <i class="fas fa-reply"></i> Reply
+                              </button>
+                            <% } %>
+                            <span class="reply-count"><i class="fas fa-reply-all"></i> <%= comment.replies ? comment.replies.length : 0 %></span>
+                          </div>
+                          <div class="comment-replies">
+                            <% if (comment.replies && comment.replies.length > 0) { %>
+                              <% comment.replies.forEach(reply => { %>
+                                <div class="comment-block" data-comment-id="<%= reply._id %>">
+                                  <img src="<%= reply.createdBy.profileImageURL %>" alt="Profile Image">
+                                  <div class="comment-content">
+                                    <div class="comment-author"><a href="/profile/<%= reply.createdBy._id %>" style="color:var(--primary);text-decoration:none;"><%= reply.createdBy.fullname %></a></div>
+                                    <div class="comment-text"><%= reply.content %></div>
+                                    <div class="comment-time"><i class="fas fa-clock"></i> <%= moment(reply.createdAt).fromNow() %></div>
+                                    <div class="comment-actions">
+                                      <% if (user) { %>
+                                        <button class="comment-action-btn like-comment-btn <%= reply.likes.some(l => l._id.toString() === user._id.toString()) ? 'liked' : '' %>" data-comment-id="<%= reply._id %>">
+                                          <i class="fas fa-heart"></i>
+                                          <span class="like-count"><%= reply.likes.length %></span>
+                                        </button>
+                                      <% } %>
                                     </div>
                                   </div>
-                                <% }) %>
-                              <% } %>
-                            </div>
-                            <div class="reply-form-container"></div>
+                                  <div class="comment-menu">
+                                    <button class="dots-btn" onclick="toggleCommentMenu('<%= reply._id %>')">
+                                      <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu" id="comment-menu-<%= reply._id %>">
+                                      <% if (user && (reply.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
+                                        <button class="delete-btn delete-comment-btn" data-comment-id="<%= reply._id %>"><i class="fas fa-trash"></i> Delete</button>
+                                      <% } %>
+                                    </div>
+                                  </div>
+                                </div>
+                              <% }) %>
+                            <% } %>
                           </div>
-                          <div class="comment-menu">
-                            <button class="dots-btn" onclick="toggleCommentMenu('<%= comment._id %>')">
-                              <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
-                              <% if (user && (comment.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
-                                <button class="delete-btn delete-comment-btn" data-comment-id="<%= comment._id %>"><i class="fas fa-trash"></i> Delete</button>
-                              <% } %>
-                            </div>
+                          <div class="reply-form-container"></div>
+                        </div>
+                        <div class="comment-menu">
+                          <button class="dots-btn" onclick="toggleCommentMenu('<%= comment._id %>')">
+                            <i class="fas fa-ellipsis-v"></i>
+                          </button>
+                          <div class="dropdown-menu" id="comment-menu-<%= comment._id %>">
+                            <% if (user && (comment.createdBy._id.toString() === user._id.toString() || blog.createdBy._id.toString() === user._id.toString())) { %>
+                              <button class="delete-btn delete-comment-btn" data-comment-id="<%= comment._id %>"><i class="fas fa-trash"></i> Delete</button>
+                            <% } %>
                           </div>
                         </div>
-                      <% }) %>
-                    </div>
+                      </div>
+                    <% }) %>
                   </div>
                   <% if (user) { %>
                     <form action="/comment/<%= blog._id %>" method="POST" class="post-comment-form">
@@ -954,12 +919,11 @@
       <div class="alert alert-error">Profile not found.</div>
     <% } %>
   </div>
-  <div id="shareModal" class="modal">
+  <div id="shareModal">
     <button class="close-btn" onclick="closeShare()">&times;</button>
     <h3>Share Blog</h3>
     <div class="share-options">
       <button class="share-btn" id="share-facebook"><i class="fab fa-facebook"></i> Facebook</button>
-      <button class="share-btn" id="share-instagram"><i class="fab fa-instagram"></i> Instagram</button>
       <button class="share-btn" id="share-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
       <button class="share-btn" id="copy-link"><i class="fas fa-copy"></i> Copy Link</button>
     </div>
@@ -984,17 +948,9 @@
 
     function openShare(id) {
       currentBlogId = id;
-      const shareModal = document.getElementById('shareModal');
-      shareModal.style.display = 'block';
-      setTimeout(() => {
-        shareModal.classList.add('active');
-      }, 8);
+      document.getElementById('shareModal').style.display = 'block';
       const link = `${window.location.origin}/blog/${id}`;
       document.getElementById('share-facebook').onclick = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
-      document.getElementById('share-instagram').onclick = () => {
-        navigator.clipboard.writeText(link);
-        alert('Link copied! Open Instagram app to share.');
-      };
       document.getElementById('share-whatsapp').onclick = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(link)}`, '_blank');
       document.getElementById('copy-link').onclick = () => {
         navigator.clipboard.writeText(link);
@@ -1003,11 +959,7 @@
     }
 
     function closeShare() {
-      const shareModal = document.getElementById('shareModal');
-      shareModal.classList.remove('active');
-      setTimeout(() => {
-        shareModal.style.display = 'none';
-      }, 400);
+      document.getElementById('shareModal').style.display = 'none';
     }
 
     function showLikes(id) {
@@ -1020,9 +972,6 @@
       setTimeout(() => {
         modal.classList.add('active');
       }, 8);
-      const overlay = document.querySelector('.popup-overlay');
-      overlay.classList.add('overlay-transparent');
-      overlay.style.display = 'block';
     }
 
     function hideLikes(id) {
@@ -1031,9 +980,6 @@
       setTimeout(() => {
         modal.style.display = 'none';
       }, 400);
-      const overlay = document.querySelector('.popup-overlay');
-      overlay.classList.remove('overlay-transparent');
-      overlay.style.display = 'none';
     }
     
     function showComments(id) {
@@ -1046,13 +992,6 @@
       setTimeout(() => {
         modal.classList.add('active');
       }, 8);
-      const overlay = document.querySelector('.popup-overlay');
-      overlay.classList.add('overlay-transparent');
-      overlay.style.display = 'block';
-      const textarea = modal.querySelector('.post-comment-form textarea');
-      if (textarea) {
-        textarea.focus();
-      }
     }
 
     function hideComments(id) {
@@ -1061,9 +1000,6 @@
       setTimeout(() => {
         modal.style.display = 'none';
       }, 400);
-      const overlay = document.querySelector('.popup-overlay');
-      overlay.classList.remove('overlay-transparent');
-      overlay.style.display = 'none';
     }
 
     document.addEventListener('click', (e) => {
@@ -1083,6 +1019,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+
       // Generic handler for AJAX forms
       const handleFormSubmit = async (e, successCallback) => {
         e.preventDefault();
@@ -1141,7 +1078,7 @@
         });
       });
 
-      // AJAX for follow/unfollow/cancel (for the main profile follow button)
+      // AJAX for follow/unfollow/cancel
       document.querySelectorAll('.ajax-follow-btn').forEach(button => {
         button.addEventListener('click', async () => {
           const userId = button.dataset.userId;
@@ -1176,13 +1113,175 @@
               } else {
                 button.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
               }
-              // Reload page to update visibility if needed
-              location.reload();
             } else {
               console.error('Failed to update follow status');
             }
           } catch (error) {
             console.error('Error:', error);
+          }
+        });
+      });
+
+      // Like a comment
+      document.querySelectorAll('.like-comment-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const commentId = button.dataset.commentId;
+          const isLiked = button.classList.contains('liked');
+          const likeCountSpan = button.querySelector('.like-count');
+
+          try {
+            const response = await fetch(`/comment/${commentId}/like`, {
+              method: isLiked ? 'DELETE' : 'POST',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              button.classList.toggle('liked');
+              likeCountSpan.textContent = data.likesCount;
+            } else {
+              console.error('Failed to like comment');
+            }
+          } catch (error) {
+            console.error('Error during fetch:', error);
+          }
+        });
+      });
+
+      // Delete a comment or reply
+      document.querySelectorAll('.delete-comment-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to delete this?')) return;
+
+          const commentId = button.dataset.commentId;
+          const commentBlock = button.closest('.comment-block');
+          const isReply = commentBlock.parentElement.classList.contains('comment-replies');
+          const repliesContainer = commentBlock.querySelector('.comment-replies');
+          const replyCount = repliesContainer ? repliesContainer.querySelectorAll('.comment-block').length : 0;
+          const deletedCount = isReply ? 1 : 1 + replyCount;
+
+          try {
+            const response = await fetch(`/comment/${commentId}`, {
+              method: 'DELETE',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              commentBlock.remove();
+
+              // Update total comments count
+              const modal = button.closest('.modal');
+              const modalId = modal.id;
+              const blogId = modalId.split('-')[1];
+              const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+              const countSpan = blogCard.querySelector('.comments-count');
+              const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
+              let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
+              currentCount -= deletedCount;
+              countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
+
+              // Check if no comments left
+              const commentsList = modal.querySelector('.comments-list');
+              if (commentsList.querySelectorAll('.comment-block').length === 0) {
+                commentsList.innerHTML = '<div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>';
+              }
+            } else {
+              alert('Failed to delete');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+          }
+        });
+      });
+
+      // Show Reply Form
+      document.querySelectorAll('.reply-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const commentBlock = e.target.closest('.comment-block');
+          const replyFormContainer = commentBlock.querySelector('.reply-form-container');
+          const commentId = button.dataset.commentId;
+
+          // Remove any existing reply forms
+          document.querySelectorAll('.comment-reply-form').forEach(form => form.remove());
+
+          const replyFormHtml = `
+            <form action="/comment/reply/${commentId}" method="POST" class="comment-reply-form">
+              <textarea name="content" required placeholder="Write a reply…" rows="2"
+                        style="width:100%; padding:.6rem; border-radius:4px; background:#2c3e50; color:#ecf0f1; border:1px solid #34495e;"></textarea>
+              <button type="submit" style="margin-top:.5rem; padding:.5rem 1rem; background:#3498db; border:none; border-radius:4px; color:#fff; cursor:pointer;">
+                Post Reply
+              </button>
+            </form>
+          `;
+          replyFormContainer.innerHTML = replyFormHtml;
+
+          // Focus on the new textarea
+          const newForm = replyFormContainer.querySelector('form');
+          if (newForm) {
+            const textarea = newForm.querySelector('textarea');
+            if (textarea) textarea.focus();
+            
+            // Add submit listener to the new form
+            newForm.addEventListener('submit', (e) => {
+              handleFormSubmit(e, (data, form) => {
+                if (data.success) {
+                  const newReply = data.newReply;
+                  const repliesContainer = form.closest('.comment-content').querySelector('.comment-replies');
+                  
+                  const replyHtml = `
+                    <div class="comment-block" data-comment-id="${newReply._id}">
+                      <img src="${newReply.createdBy.profileImageURL}" alt="Profile Image">
+                      <div class="comment-content">
+                        <div class="comment-author"><a href="/profile/${newReply.createdBy._id}" style="color:var(--primary);text-decoration:none;">${newReply.createdBy.fullname}</a></div>
+                        <div class="comment-text">${newReply.content}</div>
+                        <div class="comment-time"><i class="fas fa-clock"></i> Just now</div>
+                        <div class="comment-actions">
+                          <button class="comment-action-btn like-comment-btn" data-comment-id="${newReply._id}">
+                            <i class="fas fa-heart"></i>
+                            <span class="like-count">0</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="comment-menu">
+                        <button class="dots-btn" onclick="toggleCommentMenu('${newReply._id}')">
+                          <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="dropdown-menu" id="comment-menu-${newReply._id}">
+                          <button class="delete-btn delete-comment-btn" data-comment-id="${newReply._id}"><i class="fas fa-trash"></i> Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                  repliesContainer.innerHTML += replyHtml;
+                  form.remove(); // Remove the reply form after submission
+
+                  // Update total comments count
+                  const modal = form.closest('.modal');
+                  const modalId = modal.id;
+                  const blogId = modalId.split('-')[1];
+                  const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
+                  const countSpan = blogCard.querySelector('.comments-count');
+                  const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
+                  let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
+                  currentCount += 1;
+                  countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
+
+                  // Update reply count
+                  const replyCountSpan = button.closest('.comment-actions').querySelector('.reply-count');
+                  const currentReplyCount = parseInt(replyCountSpan.textContent.match(/\d+/)[0]);
+                  replyCountSpan.innerHTML = `<i class="fas fa-reply-all"></i> ${currentReplyCount + 1}`;
+                } else {
+                  alert('Failed to post reply.');
+                }
+              });
+            });
           }
         });
       });
@@ -1247,269 +1346,6 @@
           });
         });
       });
-
-      // Popup logic (followers, following, common)
-      const followersToggle = document.querySelector('.followers-toggle');
-      const followingToggle = document.querySelector('.following-toggle');
-      const commonToggle = document.querySelector('.common-toggle');
-      const followersPopup = document.querySelector('.followers-popup');
-      const followingPopup = document.querySelector('.following-popup');
-      const commonPopup = document.querySelector('.common-popup');
-      const closeFollowers = document.querySelector('.close-followers');
-      const closeFollowing = document.querySelector('.close-following');
-      const closeCommon = document.querySelector('.close-common');
-      const overlay = document.querySelector('.popup-overlay');
-
-      const showPopup = (popup) => {
-        if (popup) {
-          popup.style.display = 'block';
-          overlay.style.display = 'block';
-          setTimeout(() => {
-            popup.classList.add('active');
-          }, 8);
-          popup.focus();
-        }
-      };
-      const hidePopup = (popup) => {
-        if (popup) {
-          popup.classList.remove('active');
-          setTimeout(() => {
-            popup.style.display = 'none';
-            overlay.style.display = 'none';
-          }, 400);
-        }
-      };
-
-      if (followersToggle && followersPopup) {
-        followersToggle.addEventListener('click', () => showPopup(followersPopup));
-        followersToggle.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            showPopup(followersPopup);
-          }
-        });
-      }
-      if (closeFollowers && followersPopup) {
-        closeFollowers.addEventListener('click', () => hidePopup(followersPopup));
-      }
-
-      if (followingToggle && followingPopup) {
-        followingToggle.addEventListener('click', () => showPopup(followingPopup));
-        followingToggle.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            showPopup(followingPopup);
-          }
-        });
-      }
-      if (closeFollowing && followingPopup) {
-        closeFollowing.addEventListener('click', () => hidePopup(followingPopup));
-      }
-
-      if (commonToggle && commonPopup) {
-        commonToggle.addEventListener('click', () => showPopup(commonPopup));
-        commonToggle.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            showPopup(commonPopup);
-          }
-        });
-      }
-      if (closeCommon && commonPopup) {
-        closeCommon.addEventListener('click', () => hidePopup(commonPopup));
-      }
-
-      overlay.addEventListener('click', () => {
-        hidePopup(followersPopup);
-        hidePopup(followingPopup);
-        hidePopup(commonPopup);
-        document.querySelectorAll('.modal.active').forEach(modal => {
-          modal.classList.remove('active');
-          setTimeout(() => {
-            modal.style.display = 'none';
-          }, 400);
-        });
-        overlay.style.display = 'none';
-      });
-
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          hidePopup(followersPopup);
-          hidePopup(followingPopup);
-          hidePopup(commonPopup);
-          document.querySelectorAll('.modal.active').forEach(modal => {
-            modal.classList.remove('active');
-            setTimeout(() => {
-              modal.style.display = 'none';
-            }, 400);
-          });
-          overlay.style.display = 'none';
-        }
-      });
-    });
-
-    // Delegated event listener for dynamic comment actions
-    document.addEventListener('click', async (e) => {
-      const likeButton = e.target.closest('.like-comment-btn');
-      if (likeButton) {
-        const commentId = likeButton.dataset.commentId;
-        const isLiked = likeButton.classList.contains('liked');
-        const likeCountSpan = likeButton.querySelector('.like-count');
-
-        try {
-          const response = await fetch(`/comment/${commentId}/like`, {
-            method: isLiked ? 'DELETE' : 'POST',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest',
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            likeButton.classList.toggle('liked');
-            likeCountSpan.textContent = data.likesCount;
-          } else {
-            console.error('Failed to like comment');
-          }
-        } catch (error) {
-          console.error('Error during fetch:', error);
-        }
-        return;
-      }
-
-      const deleteButton = e.target.closest('.delete-comment-btn');
-      if (deleteButton) {
-        if (!confirm('Are you sure you want to delete this?')) return;
-
-        const commentId = deleteButton.dataset.commentId;
-        const commentBlock = deleteButton.closest('.comment-block');
-        const isReply = commentBlock.parentElement.classList.contains('comment-replies');
-        const repliesContainer = commentBlock.querySelector('.comment-replies');
-        const replyCount = repliesContainer ? repliesContainer.querySelectorAll('.comment-block').length : 0;
-        const deletedCount = isReply ? 1 : 1 + replyCount;
-
-        try {
-          const response = await fetch(`/comment/${commentId}`, {
-            method: 'DELETE',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest',
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (response.ok) {
-            commentBlock.remove();
-
-            // Update total comments count
-            const modal = deleteButton.closest('.modal');
-            const modalId = modal.id;
-            const blogId = modalId.split('-')[1];
-            const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
-            const countSpan = blogCard.querySelector('.comments-count');
-            const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
-            let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
-            currentCount -= deletedCount;
-            countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
-
-            // Check if no comments left
-            const commentsList = modal.querySelector('.comments-list');
-            if (commentsList.querySelectorAll('.comment-block').length === 0) {
-              commentsList.innerHTML = '<div style="color:#b2becd;font-size:1.06rem;">No comments yet.</div>';
-            }
-          } else {
-            alert('Failed to delete');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          alert('An error occurred');
-        }
-        return;
-      }
-
-      const replyButton = e.target.closest('.reply-btn');
-      if (replyButton) {
-        const commentBlock = replyButton.closest('.comment-block');
-        const replyFormContainer = commentBlock.querySelector('.reply-form-container');
-        const commentId = replyButton.dataset.commentId;
-
-        // Remove any existing reply forms
-        document.querySelectorAll('.comment-reply-form').forEach(form => form.remove());
-
-        const replyFormHtml = `
-          <form action="/comment/reply/${commentId}" method="POST" class="comment-reply-form">
-            <textarea name="content" required placeholder="Write a reply…" rows="2"
-                      style="width:100%; padding:.6rem; border-radius:4px; background:#2c3e50; color:#ecf0f1; border:1px solid #34495e;"></textarea>
-            <button type="submit" style="margin-top:.5rem; padding:.5rem 1rem; background:#3498db; border:none; border-radius:4px; color:#fff; cursor:pointer;">
-              Post Reply
-            </button>
-          </form>
-        `;
-        replyFormContainer.innerHTML = replyFormHtml;
-
-        // Focus on the new textarea
-        const newForm = replyFormContainer.querySelector('form');
-        if (newForm) {
-          const textarea = newForm.querySelector('textarea');
-          if (textarea) textarea.focus();
-          
-          // Add submit listener to the new form
-          newForm.addEventListener('submit', (e) => {
-            handleFormSubmit(e, (data, form) => {
-              if (data.success) {
-                const newReply = data.newReply;
-                const repliesContainer = form.closest('.comment-content').querySelector('.comment-replies');
-                
-                const replyHtml = `
-                  <div class="comment-block" data-comment-id="${newReply._id}">
-                    <img src="${newReply.createdBy.profileImageURL}" alt="Profile Image">
-                    <div class="comment-content">
-                      <div class="comment-author"><a href="/profile/${newReply.createdBy._id}" style="color:var(--primary);text-decoration:none;">${newReply.createdBy.fullname}</a></div>
-                      <div class="comment-text">${newReply.content}</div>
-                      <div class="comment-time"><i class="fas fa-clock"></i> Just now</div>
-                      <div class="comment-actions">
-                        <button class="comment-action-btn like-comment-btn" data-comment-id="${newReply._id}">
-                          <i class="fas fa-heart"></i>
-                          <span class="like-count">0</span>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="comment-menu">
-                      <button class="dots-btn" onclick="toggleCommentMenu('${newReply._id}')">
-                        <i class="fas fa-ellipsis-v"></i>
-                      </button>
-                      <div class="dropdown-menu" id="comment-menu-${newReply._id}">
-                        <button class="delete-btn delete-comment-btn" data-comment-id="${newReply._id}"><i class="fas fa-trash"></i> Delete</button>
-                      </div>
-                    </div>
-                  </div>
-                `;
-                repliesContainer.innerHTML += replyHtml;
-                form.remove(); // Remove the reply form after submission
-
-                // Update total comments count
-                const modal = form.closest('.modal');
-                const modalId = modal.id;
-                const blogId = modalId.split('-')[1];
-                const blogCard = document.querySelector(`.blog-card[data-blog-id="${blogId}"]`);
-                const countSpan = blogCard.querySelector('.comments-count');
-                const currentCountMatch = countSpan.innerHTML.match(/(\d+) Comments/);
-                let currentCount = parseInt(currentCountMatch ? currentCountMatch[1] : 0);
-                currentCount += 1;
-                countSpan.innerHTML = `<i class="fas fa-comments"></i> ${currentCount} Comments`;
-
-                // Update reply count
-                const replyCountSpan = replyButton.closest('.comment-actions').querySelector('.reply-count');
-                const currentReplyCount = parseInt(replyCountSpan.textContent.match(/\d+/)[0]);
-                replyCountSpan.innerHTML = `<i class="fas fa-reply-all"></i> ${currentReplyCount + 1}`;
-              } else {
-                alert('Failed to post reply.');
-              }
-            });
-          });
-        }
-        return;
-      }
     });
   </script>
 </body>
