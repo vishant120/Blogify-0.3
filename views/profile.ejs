@@ -156,40 +156,41 @@
     .popup, .modal {
       display: none;
       position: fixed;
-      top: 50%;
+      bottom: 0;
       left: 50%;
-      width: 90vw;
-      max-width: 500px;
+      transform: translate(-50%, 100%);
+      width: 100%;
+      max-width: 350px;
       height: auto;
-      max-height: 80vh;
+      max-height: 500vh;
       overflow-y: auto;
       background: var(--card-bg);
-      padding: 2.2rem 1.7rem 1.5rem;
-      border-radius: 1.1rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      z-index: 9000;
-      transform: translate(-50%, 100%);
+      padding: 2.2rem 1.2rem 1.2rem;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      box-shadow: 0 -15px 40px rgba(0,0,0,0.28);
+      z-index: 2200;
       transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
     }
     .popup.active, .modal.active {
       display: block;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, 0);
     }
     .popup h3, .modal h3 {
       margin-top: 0;
       color: var(--primary);
       margin-bottom: 1.2rem;
-      font-size: 1.3rem;
-      letter-spacing: 1px;
+      font-size: 1.25rem;
+      letter-spacing: .5px;
     }
     .popup .close-btn, .modal .close-btn {
       position: absolute;
+      top: 14px;
       right: 18px;
-      top: 13px;
-      font-size: 2rem;
       background: none;
       border: none;
       color: var(--text-main);
+      font-size: 1.33rem;
       cursor: pointer;
       transition: color 0.2s;
     }
@@ -235,10 +236,23 @@
       background: transparent !important;
     }
     .followers-popup, .following-popup, .common-popup {
-      max-width: 500px;
+      left: 0;
+      width: 100%;
+      max-width: 100%;
+      height: 80vh;
+      max-height: 80vh;
+      transform: translate(0, 100%);
+      background: #252b3f;
+      border-radius: 0;
+      padding: 2.2rem 1.2rem 1.2rem;
+    }
+    .followers-popup.active, .following-popup.active, .common-popup.active {
+      transform: translate(0, 0);
     }
     .likes-modal, .comments-modal {
-      max-width: 500px;
+      max-width: 800px;
+      height: 500px;
+      background: #252b3f;
     }
     .blogs-section {
       margin-top: 2.2rem;
@@ -583,6 +597,25 @@
         padding: 1.5rem 1rem 1rem;
       }
     }
+    @media (min-width: 601px) {
+      .popup:not(.followers-popup):not(.following-popup):not(.common-popup), .modal {
+        bottom: 0;
+        transform: translate(-50%, 100%);
+      }
+      .popup:not(.followers-popup):not(.following-popup):not(.common-popup).active, .modal.active {
+        transform: translate(-50%, 0);
+      }
+      .popup:not(.followers-popup):not(.following-popup):not(.common-popup), .modal {
+        border-radius: 1rem;
+      }
+      .followers-popup, .following-popup, .common-popup {
+        bottom: 0;
+        transform: translate(0, 100%);
+      }
+      .followers-popup.active, .following-popup.active, .common-popup.active {
+        transform: translate(0, 0);
+      }
+    }
   </style>
 </head>
 <body>
@@ -648,7 +681,7 @@
       <!-- Followers Popup -->
       <div class="popup followers-popup">
         <h3><i class="fas fa-users"></i> Followers</h3>
-        <button class="close-btn" onclick="hidePopup(document.querySelector('.followers-popup'))">&times;</button>
+        <button class="close-btn close-followers" aria-label="Close Followers">&times;</button>
         <% if (!profileUser.followers || profileUser.followers.length === 0) { %>
           <p style="color:var(--text-dim);">No followers yet.</p>
         <% } else { %>
@@ -663,7 +696,7 @@
       <!-- Following Popup -->
       <div class="popup following-popup">
         <h3><i class="fas fa-user-friends"></i> Following</h3>
-        <button class="close-btn" onclick="hidePopup(document.querySelector('.following-popup'))">&times;</button>
+        <button class="close-btn close-following" aria-label="Close Following">&times;</button>
         <% if (!profileUser.following || profileUser.following.length === 0) { %>
           <p style="color:var(--text-dim);">Not following anyone yet.</p>
         <% } else { %>
@@ -678,7 +711,7 @@
       <!-- Common Followers Popup -->
       <div class="popup common-popup">
         <h3><i class="fas fa-user-group"></i> Common Followers</h3>
-        <button class="close-btn" onclick="hidePopup(document.querySelector('.common-popup'))">&times;</button>
+        <button class="close-btn close-common" aria-label="Close Common Followers">&times;</button>
         <% if (commonFollowers.length === 0) { %>
           <p style="color:var(--text-dim);">No common followers.</p>
         <% } else { %>
@@ -919,7 +952,7 @@
       <div class="alert alert-error">Profile not found.</div>
     <% } %>
   </div>
-  <div id="shareModal">
+  <div id="shareModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card-bg); padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 10000; width: 300px;">
     <button class="close-btn" onclick="closeShare()">&times;</button>
     <h3>Share Blog</h3>
     <div class="share-options">
@@ -1345,6 +1378,93 @@
             }
           });
         });
+      });
+
+      // Popup logic (followers, following, common)
+      const followersToggle = document.querySelector('.followers-toggle');
+      const followingToggle = document.querySelector('.following-toggle');
+      const commonToggle = document.querySelector('.common-toggle');
+      const followersPopup = document.querySelector('.followers-popup');
+      const followingPopup = document.querySelector('.following-popup');
+      const commonPopup = document.querySelector('.common-popup');
+      const closeFollowers = document.querySelector('.close-followers');
+      const closeFollowing = document.querySelector('.close-following');
+      const closeCommon = document.querySelector('.close-common');
+      const overlay = document.querySelector('.popup-overlay');
+
+      const showPopup = (popup) => {
+        if (popup) {
+          popup.style.display = 'block';
+          overlay.style.display = 'block';
+          setTimeout(() => {
+            popup.classList.add('active');
+          }, 8);
+          popup.focus();
+        }
+      };
+      const hidePopup = (popup) => {
+        if (popup) {
+          popup.classList.remove('active');
+          setTimeout(() => {
+            popup.style.display = 'none';
+            overlay.style.display = 'none';
+          }, 400);
+        }
+      };
+
+      if (followersToggle && followersPopup) {
+        followersToggle.addEventListener('click', () => showPopup(followersPopup));
+        followersToggle.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            showPopup(followersPopup);
+          }
+        });
+      }
+      if (closeFollowers && followersPopup) {
+        closeFollowers.addEventListener('click', () => hidePopup(followersPopup));
+      }
+
+      if (followingToggle && followingPopup) {
+        followingToggle.addEventListener('click', () => showPopup(followingPopup));
+        followingToggle.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            showPopup(followingPopup);
+          }
+        });
+      }
+      if (closeFollowing && followingPopup) {
+        closeFollowing.addEventListener('click', () => hidePopup(followingPopup));
+      }
+
+      if (commonToggle && commonPopup) {
+        commonToggle.addEventListener('click', () => showPopup(commonPopup));
+        commonToggle.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            showPopup(commonPopup);
+          }
+        });
+      }
+      if (closeCommon && commonPopup) {
+        closeCommon.addEventListener('click', () => hidePopup(commonPopup));
+      }
+
+      overlay.addEventListener('click', () => {
+        hidePopup(followersPopup);
+        hidePopup(followingPopup);
+        hidePopup(commonPopup);
+        overlay.style.display = 'none';
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          hidePopup(followersPopup);
+          hidePopup(followingPopup);
+          hidePopup(commonPopup);
+          overlay.style.display = 'none';
+        }
       });
     });
   </script>
