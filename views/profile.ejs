@@ -1,4 +1,3 @@
-<!-- views/profile.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -140,7 +139,7 @@
       align-items: center;
       gap: 0.55em;
     }
-    .follow-btn.unfollow {
+    .follow-btn.following {
       background: var(--danger);
     }
     .follow-btn.cancel {
@@ -151,31 +150,29 @@
       cursor: not-allowed;
     }
     .follow-btn:hover { background: #219653; transform: scale(1.04); }
-    .follow-btn.unfollow:hover { background: #c0392b; }
+    .follow-btn.following:hover { background: #c0392b; }
     .follow-btn.cancel:hover { background: #c0392b; }
     /* Popups and Modals */
     .popup, .modal {
       display: none;
       position: fixed;
-      bottom: 0;
+      top: 50%;
       left: 50%;
-      transform: translate(-50%, 100%);
-      width: 100%;
-      max-width: 350px;
+      transform: translate(-50%, -50%);
+      width: 90vw;
+      max-width: 500px;
       height: auto;
-      max-height: 500vh;
+      max-height: 80vh;
       overflow-y: auto;
       background: var(--card-bg);
       padding: 2.2rem 1.2rem 1.2rem;
-      border-top-left-radius: 1rem;
-      border-top-right-radius: 1rem;
-      box-shadow: 0 -15px 40px rgba(0,0,0,0.28);
-      z-index: 2200;
+      border-radius: 1.1rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      z-index: 9000;
       transition: transform 0.4s cubic-bezier(0.5,1.6,0.4,0.9);
     }
     .popup.active, .modal.active {
       display: block;
-      transform: translate(-50%, 0);
     }
     .popup h3, .modal h3 {
       margin-top: 0;
@@ -191,7 +188,7 @@
       background: none;
       border: none;
       color: var(--text-main);
-      font-size: 1.33rem;
+      font-size: 2rem;
       cursor: pointer;
       transition: color 0.2s;
     }
@@ -829,26 +826,27 @@
                   </div>
                 </div>
                 <div id="likesModal-<%= blog._id %>" class="modal likes-modal">
-                  <button class="close-btn close-likes" aria-label="Close Likes">
-                    <i class="fas fa-arrow-left"></i>
-                  </button>
+                  <button class="close-btn" onclick="hideLikes('<%= blog._id %>')">&times;</button>
                   <h3><i class="fas fa-heart"></i> Likes</h3>
                   <% if (blog.likes.length === 0) { %>
                     <div style="color:#b2becd;font-size:1.06rem;">No likes yet.</div>
-                  <% } else { %>
-                    <% blog.likes.forEach(liker => { %>
-                      <div class="popup-list-user">
-                        <img src="<%= liker.profileImageURL || '/default-profile.png' %>" alt="<%= liker.fullname %>'s Profile Image">
-                        <a href="/profile/<%= liker._id %>"><%= liker.fullname %></a>
+                  <% } %>
+                  <% blog.likes.forEach(liker => { %>
+                    <div class="like-block">
+                      <img src="<%= liker.profileImageURL %>" alt="Profile Image">
+                      <div class="like-content">
+                        <div class="like-author">
+                          <a href="/profile/<%= liker._id %>"><%= liker.fullname %></a>
+                        </div>
                         <% if (user && liker._id.toString() !== user._id.toString()) { %>
                           <% if (liker.followStatus === 'requested') { %>
-                            <form action="/user/cancel-follow/<%= liker._id %>" method="POST" style="margin:0;">
+                            <form action="/user/cancel-follow/<%= liker._id %>" method="POST" style="display:inline;">
                               <button class="follow-btn cancel ajax-follow-btn" type="button" data-user-id="<%= liker._id %>" data-follow-status="requested">
                                 <i class="fas fa-user-times"></i> Cancel Request
                               </button>
                             </form>
                           <% } else { %>
-                            <form action="<%= liker.followStatus === 'following' ? `/user/unfollow/${liker._id}` : `/user/follow/${liker._id}` %>" method="POST" style="margin:0;">
+                            <form action="<%= liker.followStatus === 'following' ? '/user/unfollow/' : '/user/follow/' %><%= liker._id %>" method="POST" style="display:inline;">
                               <button class="follow-btn <%= liker.followStatus === 'following' ? 'following' : '' %> ajax-follow-btn" type="button" data-user-id="<%= liker._id %>" data-follow-status="<%= liker.followStatus %>">
                                 <i class="fas <%= liker.followStatus === 'following' ? 'fa-user-minus' : 'fa-user-plus' %>"></i>
                                 <%= liker.followStatus === 'following' ? 'Unfollow' : 'Follow' %>
@@ -857,13 +855,11 @@
                           <% } %>
                         <% } %>
                       </div>
-                    <% }) %>
-                  <% } %>
+                    </div>
+                  <% }) %>
                 </div>
                 <div id="commentsModal-<%= blog._id %>" class="modal comments-modal">
-                  <button class="close-btn close-comments" aria-label="Close Comments">
-                    <i class="fas fa-arrow-left"></i>
-                  </button>
+                  <button class="close-btn" onclick="hideComments('<%= blog._id %>')">&times;</button>
                   <h3><i class="fas fa-comments"></i> Comments</h3>
                   <div class="comments-container">
                     <div class="comments-list">
@@ -938,7 +934,7 @@
                     </div>
                   </div>
                   <% if (user) { %>
-                    <form class="post-comment-form" data-blog-id="<%= blog._id %>">
+                    <form action="/comment/<%= blog._id %>" method="POST" class="post-comment-form">
                       <textarea name="content" required placeholder="Write a comment…" rows="3"
                                 style="width:100%; padding:.6rem; border-radius:4px; background:#2c3e50; color:#ecf0f1; border:1px solid #34495e;"></textarea>
                       <button type="submit" style="margin-top:.5rem; padding:.5rem 1rem; background:#3498db; border:none; border-radius:4px; color:#fff; cursor:pointer;">
@@ -1087,39 +1083,13 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Add event listeners for close buttons in modals
-      document.querySelectorAll('.close-likes').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const modal = e.target.closest('.modal');
-          const id = modal.id.split('-')[1];
-          hideLikes(id);
-        });
-      });
-
-      document.querySelectorAll('.close-comments').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const modal = e.target.closest('.modal');
-          const id = modal.id.split('-')[1];
-          hideComments(id);
-        });
-      });
-
-      // Generic handler for AJAX forms (for comments, etc.)
+      // Generic handler for AJAX forms
       const handleFormSubmit = async (e, successCallback) => {
         e.preventDefault();
-        e.stopPropagation();
         const form = e.target;
-        let endpoint;
-        if (form.classList.contains('comment-reply-form')) {
-          endpoint = `/comment/reply/${form.dataset.commentId}`;
-        } else if (form.classList.contains('post-comment-form')) {
-          endpoint = `/comment/${form.dataset.blogId}`;
-        } else {
-          return;
-        }
         try {
           const formData = new FormData(form);
-          const response = await fetch(endpoint, {
+          const response = await fetch(form.action, {
             method: 'POST',
             body: new URLSearchParams(formData),
             headers: { 
@@ -1467,7 +1437,7 @@
         document.querySelectorAll('.comment-reply-form').forEach(form => form.remove());
 
         const replyFormHtml = `
-          <form class="comment-reply-form" data-comment-id="${commentId}">
+          <form action="/comment/reply/${commentId}" method="POST" class="comment-reply-form">
             <textarea name="content" required placeholder="Write a reply…" rows="2"
                       style="width:100%; padding:.6rem; border-radius:4px; background:#2c3e50; color:#ecf0f1; border:1px solid #34495e;"></textarea>
             <button type="submit" style="margin-top:.5rem; padding:.5rem 1rem; background:#3498db; border:none; border-radius:4px; color:#fff; cursor:pointer;">
